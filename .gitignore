@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+vendor/
+dist/
+build/
+*.egg-info/
+store.db
+/data/galgame_store.json
+/data/galgame_store.json.lock
+.env
+.DS_Store
