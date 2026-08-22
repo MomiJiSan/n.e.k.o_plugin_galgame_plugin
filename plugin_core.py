@@ -1,18 +1,19 @@
 from __future__ import annotations
 
 import asyncio
-from collections import deque
-from concurrent.futures import Future
 import os
-from pathlib import Path
 import re
-import subprocess
+import subprocess as subprocess
 import sys
 import threading
 import time
+from collections import deque
+from concurrent.futures import Future
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
+from plugin.plugins._shared.rapidocr.rapidocr_support import inspect_rapidocr_installation
 from plugin.sdk.plugin import (
     Err,
     NekoPluginBase,
@@ -20,31 +21,30 @@ from plugin.sdk.plugin import (
     SdkError,
     lifecycle,
     neko_plugin,
-    plugin_entry,
     timer_interval,
-    tr,
 )
+from plugin.sdk.plugin import plugin_entry as plugin_entry
+from plugin.sdk.plugin import tr as tr
 
 from .character_profile import CharacterProfileManager
+from .dependency_status import (
+    infer_inspection_failed_dependencies,
+    infer_missing_dependencies,
+)
+from .dxcam_support import inspect_dxcam_installation
 from .game_llm_agent import GameLLMAgent
 from .host_agent_adapter import HostAgentAdapter
 from .llm_gateway import LLMGateway
 from .memory_reader import MemoryReaderManager
-from .ocr_reader import OcrReaderManager, utc_now_iso
 from .models import (
-    ADVANCE_SPEEDS,
     ADVANCE_SPEED_MEDIUM,
+    ADVANCE_SPEEDS,
     DATA_SOURCE_BRIDGE_SDK,
     DATA_SOURCE_MEMORY_READER,
     DATA_SOURCE_NONE,
     DATA_SOURCE_OCR_READER,
-    MODE_CHOICE_ADVISOR,
     MODE_COMPANION,
     MODES,
-    build_ocr_capture_profile_bucket_key,
-    compute_ocr_window_aspect_ratio,
-    OCR_CAPTURE_PROFILE_RATIO_KEYS,
-    OCR_CAPTURE_PROFILE_SAVE_SCOPES,
     OCR_CAPTURE_PROFILE_SAVE_SCOPE_PROCESS_FALLBACK,
     OCR_CAPTURE_PROFILE_SAVE_SCOPE_WINDOW_BUCKET,
     OCR_CAPTURE_PROFILE_STAGE_CONFIG,
@@ -55,31 +55,28 @@ from .models import (
     OCR_CAPTURE_PROFILE_STAGE_MENU,
     OCR_CAPTURE_PROFILE_STAGE_MINIGAME,
     OCR_CAPTURE_PROFILE_STAGE_SAVE_LOAD,
-    OCR_CAPTURE_PROFILE_STAGES,
     OCR_CAPTURE_PROFILE_STAGE_TITLE,
     OCR_CAPTURE_PROFILE_STAGE_TRANSITION,
-    OCR_CAPTURE_PROFILE_WINDOW_BUCKETS_KEY,
     OCR_TRIGGER_MODE_AFTER_ADVANCE,
     OCR_TRIGGER_MODE_INTERVAL,
     OCR_TRIGGER_MODES,
-    parse_ocr_capture_profile_bucket_key,
     READER_MODE_AUTO,
     READER_MODE_MEMORY,
     READER_MODE_OCR,
     READER_MODES,
     STATE_ACTIVE,
     STATE_ERROR,
-    STORE_BOUND_GAME_ID,
     STORE_ADVANCE_SPEED,
+    STORE_BOUND_GAME_ID,
     STORE_CHARACTER_FIXED_NAME,
     STORE_CHARACTER_MODE,
     STORE_CHARACTER_PROFILE_VERSION,
     STORE_CHARACTER_PROFILES,
+    STORE_CHARACTER_RUNTIME_STATE,
     STORE_EVENTS_BYTE_OFFSET,
     STORE_EVENTS_FILE_SIZE,
     STORE_LAST_ERROR,
     STORE_LAST_SEQ,
-    STORE_CHARACTER_RUNTIME_STATE,
     STORE_LLM_VISION_ENABLED,
     STORE_LLM_VISION_MAX_IMAGE_PX,
     STORE_MEMORY_READER_TARGET,
@@ -92,136 +89,40 @@ from .models import (
     STORE_OCR_SCREEN_TEMPLATES,
     STORE_OCR_TRIGGER_MODE,
     STORE_OCR_WINDOW_TARGET,
+    STORE_PUSH_NOTIFICATIONS,
     STORE_RAPIDOCR_AUTO_DETECT_LANG,
     STORE_RAPIDOCR_AUTO_DETECT_LAST_LANG,
     STORE_RAPIDOCR_LANG_TYPE,
     STORE_RAPIDOCR_OCR_VERSION,
-    STORE_PUSH_NOTIFICATIONS,
     STORE_READER_MODE,
     STORE_SESSION_ID,
+    build_ocr_capture_profile_bucket_key,
+    compute_ocr_window_aspect_ratio,
     json_copy,
     make_error,
 )
-from .dependency_status import (
-    infer_inspection_failed_dependencies,
-    infer_missing_dependencies,
+from .models import MODE_CHOICE_ADVISOR as MODE_CHOICE_ADVISOR
+from .models import OCR_CAPTURE_PROFILE_RATIO_KEYS as OCR_CAPTURE_PROFILE_RATIO_KEYS
+from .models import OCR_CAPTURE_PROFILE_SAVE_SCOPES as OCR_CAPTURE_PROFILE_SAVE_SCOPES
+from .models import OCR_CAPTURE_PROFILE_STAGES as OCR_CAPTURE_PROFILE_STAGES
+from .models import OCR_CAPTURE_PROFILE_WINDOW_BUCKETS_KEY as OCR_CAPTURE_PROFILE_WINDOW_BUCKETS_KEY
+from .models import parse_ocr_capture_profile_bucket_key as parse_ocr_capture_profile_bucket_key
+from .ocr_reader import OcrReaderManager
+from .ocr_runtime_types import utc_now_iso
+from .plugin_capture_profile_helpers import (
+    _capture_profile_bucket_entry_to_stage_map,
+    _capture_profile_components_to_entry,
+    _capture_profile_entry_to_stage_map,
+    _capture_profile_entry_to_window_bucket_map,
+    _normalize_ocr_capture_profile_payload,
+    _normalize_ocr_capture_profile_save_scope,
+    _normalize_ocr_capture_profile_stage,
 )
-from plugin.plugins._shared.rapidocr.rapidocr_support import inspect_rapidocr_installation
-from .dxcam_support import inspect_dxcam_installation
-from .reader import (
-    read_stream_checkpoint,
-    snapshot_events_boundary,
-    tail_events_jsonl,
-    warmup_replay_events,
-)
-from .session_lifecycle import (
-    SESSION_ORIGIN_PREEXISTING,
-    classify_session_origin,
-    event_releases_empty_snapshot_gate,
-    session_identity_key,
-)
-from .service import (
-    apply_event_to_histories,
-    apply_event_to_snapshot,
-    apply_input_degraded_result,
-    build_active_session_meta,
-    build_config,
-    build_explain_degraded_result,
-    build_explain_context,
-    build_history_payload,
-    build_ocr_context_diagnostic,
-    build_ocr_background_status,
-    build_primary_diagnosis,
-    build_snapshot_payload,
-    build_status_payload,
-    build_suggest_context,
-    build_suggest_degraded_result,
-    build_summarize_degraded_result,
-    build_summarize_context,
-    choose_candidate,
-    clear_install_inspection_cache,
-    derive_connection_state,
-    filter_memory_reader_candidates,
-    filter_ocr_reader_candidates,
-    mode_allows_agent_actuation,
-    next_poll_interval_for_state,
-    rebuild_histories_from_events,
-    scan_session_candidates,
-)
-from .state import GalgameSharedState, build_initial_state
-from .store import GalgameStore
-from .textractor_support import install_textractor
-from .ui_api import build_open_ui_payload
-from .screen_classifier import classify_screen_from_ocr, normalize_screen_type
-from .screen_awareness_training import (
-    evaluate_screen_awareness_model,
-    train_screen_awareness_model,
-)
-
-
-from .plugin_util_helpers import (
-    _log_plugin_noncritical,
-    _package_public_attr,
-    _public_context_snapshot,
-    _migrate_legacy_capture_backend,
-    _duration_percentile,
-    _duration_summary,
-    _open_url_in_browser,
-)
-
+from .plugin_config_service import GalgamePluginConfigService
 from .plugin_constants import (
     _OCR_BACKEND_SELECTIONS,
     _OCR_CAPTURE_BACKEND_SELECTIONS,
 )
-
-
-_BACKGROUND_BRIDGE_POLL_MIN_STALE_SECONDS = 45.0
-_BRIDGE_TICK_INTERVAL_SECONDS = 1.0
-_PREEXISTING_SESSION_STATE_LIMIT = 16
-# Foreground refresh TTL: repeated calls within two seconds return early so
-# bridge_tick, advance monitor, and status payload refreshes stay idempotent.
-_OCR_FOREGROUND_REFRESH_TTL_SECONDS = 2.0
-_LATENCY_SAMPLE_LIMIT = 120
-_LATENCY_MIN_SAMPLES_FOR_P95 = 5
-_OCR_POLL_P95_DEGRADE_THRESHOLD_SECONDS = 3.0
-_OCR_FOREGROUND_ADVANCE_MONITOR_INTERVAL_SECONDS = 0.05
-_OCR_AFTER_ADVANCE_CAPTURE_DELAY_SECONDS = 0.15
-_OCR_AFTER_ADVANCE_SETTLE_POLL_SECONDS = 0.15
-_OCR_AFTER_ADVANCE_MAX_SETTLE_SECONDS = 2.0
-
-
-from .plugin_ocr_helpers import (
-    _normalize_ocr_trigger_mode,
-    _normalize_reader_mode,
-    _session_candidate_has_text,
-    _pending_data_source_for_reader_mode,
-    _AFTER_ADVANCE_SCREEN_REFRESH_STAGES,
-    _after_advance_screen_refresh_needed,
-    _companion_after_advance_ocr_refresh_needed,
-    _ocr_reader_allowed_block_reason,
-    _ocr_tick_block_reason,
-    _ocr_emit_block_reason,
-    _apply_ocr_decision_diagnostics,
-    _OCR_BRIDGE_DIAGNOSTIC_RUNTIME_KEYS,
-    _merge_ocr_runtime_preserving_bridge_diagnostics,
-)
-
-
-from .plugin_capture_profile_helpers import (
-    _normalize_ocr_capture_profile_stage,
-    _normalize_ocr_capture_profile_save_scope,
-    _is_ratio_profile_payload,
-    _normalize_ocr_capture_profile_payload,
-    _capture_profile_entry_to_stage_map,
-    _capture_profile_bucket_entry_to_stage_map,
-    _capture_profile_entry_to_window_bucket_map,
-    _window_bucket_map_to_capture_profile_payload,
-    _capture_profile_components_to_entry,
-)
-
-
-from .plugin_config_service import GalgamePluginConfigService
-
 
 # Mixin imports for GalgamePlugin entries — sorted alphabetically by mixin
 # class name so the order here matches the class bases list below. Adding a
@@ -267,6 +168,89 @@ from .plugin_entries.galgame_suggest_choice import _GalgameSuggestChoiceMixin
 from .plugin_entries.galgame_summarize_scene import _GalgameSummarizeSceneMixin
 from .plugin_entries.galgame_train_ocr_screen_awareness_model import _GalgameTrainOcrScreenAwarenessModelMixin
 from .plugin_entries.galgame_validate_ocr_screen_templates import _GalgameValidateOcrScreenTemplatesMixin
+from .plugin_ocr_helpers import (
+    _after_advance_screen_refresh_needed,
+    _apply_ocr_decision_diagnostics,
+    _companion_after_advance_ocr_refresh_needed,
+    _merge_ocr_runtime_preserving_bridge_diagnostics,
+    _normalize_reader_mode,
+    _ocr_emit_block_reason,
+    _ocr_reader_allowed_block_reason,
+    _ocr_tick_block_reason,
+    _pending_data_source_for_reader_mode,
+    _session_candidate_has_text,
+)
+from .plugin_util_helpers import (
+    _duration_percentile,
+    _duration_summary,
+    _log_plugin_noncritical,
+    _migrate_legacy_capture_backend,
+    _open_url_in_browser,
+    _package_public_attr,
+    _public_context_snapshot,
+)
+from .reader import (
+    read_stream_checkpoint,
+    snapshot_events_boundary,
+    tail_events_jsonl,
+    warmup_replay_events,
+)
+from .screen_awareness_training import evaluate_screen_awareness_model as evaluate_screen_awareness_model
+from .screen_awareness_training import train_screen_awareness_model as train_screen_awareness_model
+from .screen_classifier import classify_screen_from_ocr, normalize_screen_type
+from .service import (
+    apply_event_to_histories,
+    apply_event_to_snapshot,
+    build_active_session_meta,
+    build_config,
+    build_ocr_background_status,
+    build_primary_diagnosis,
+    build_status_payload,
+    choose_candidate,
+    clear_install_inspection_cache,
+    derive_connection_state,
+    filter_memory_reader_candidates,
+    filter_ocr_reader_candidates,
+    next_poll_interval_for_state,
+    rebuild_histories_from_events,
+    scan_session_candidates,
+)
+from .service import apply_input_degraded_result as apply_input_degraded_result
+from .service import build_explain_context as build_explain_context
+from .service import build_explain_degraded_result as build_explain_degraded_result
+from .service import build_history_payload as build_history_payload
+from .service import build_ocr_context_diagnostic as build_ocr_context_diagnostic
+from .service import build_snapshot_payload as build_snapshot_payload
+from .service import build_suggest_context as build_suggest_context
+from .service import build_suggest_degraded_result as build_suggest_degraded_result
+from .service import build_summarize_context as build_summarize_context
+from .service import build_summarize_degraded_result as build_summarize_degraded_result
+from .service import mode_allows_agent_actuation as mode_allows_agent_actuation
+from .session_lifecycle import (
+    SESSION_ORIGIN_PREEXISTING,
+    classify_session_origin,
+    event_releases_empty_snapshot_gate,
+    session_identity_key,
+)
+from .state import GalgameSharedState as GalgameSharedState
+from .state import build_initial_state
+from .store import GalgameStore
+from .textractor_support import install_textractor as install_textractor
+from .ui_api import build_open_ui_payload as build_open_ui_payload
+
+_BACKGROUND_BRIDGE_POLL_MIN_STALE_SECONDS = 45.0
+_BRIDGE_TICK_INTERVAL_SECONDS = 1.0
+_PREEXISTING_SESSION_STATE_LIMIT = 16
+# Foreground refresh TTL: repeated calls within two seconds return early so
+# bridge_tick, advance monitor, and status payload refreshes stay idempotent.
+_OCR_FOREGROUND_REFRESH_TTL_SECONDS = 2.0
+_LATENCY_SAMPLE_LIMIT = 120
+_LATENCY_MIN_SAMPLES_FOR_P95 = 5
+_OCR_POLL_P95_DEGRADE_THRESHOLD_SECONDS = 3.0
+_OCR_FOREGROUND_ADVANCE_MONITOR_INTERVAL_SECONDS = 0.05
+_OCR_AFTER_ADVANCE_CAPTURE_DELAY_SECONDS = 0.15
+_OCR_AFTER_ADVANCE_SETTLE_POLL_SECONDS = 0.15
+_OCR_AFTER_ADVANCE_MAX_SETTLE_SECONDS = 2.0
 
 
 def _package_json_copy(value: Any) -> Any:

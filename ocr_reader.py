@@ -1,95 +1,133 @@
 from __future__ import annotations
 
-import asyncio
-import base64
-from concurrent.futures import Future, ThreadPoolExecutor
-from datetime import datetime, timezone
-import hashlib
-import io
-import json
-import logging
-import re
-import shutil
-import sys
-import tempfile
+import shutil as shutil
 import threading
 import time
-from collections import deque
-from dataclasses import dataclass, field, replace
-from functools import wraps
+from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Iterable, Protocol
-from uuid import uuid4
+from typing import Any, Callable
 
+try:
+    import psutil
+except ImportError:  # pragma: no cover
+    psutil = None
+
+from plugin.plugins._shared.rapidocr.rapidocr_support import (
+    inspect_rapidocr_installation as _inspect_rapidocr_installation,
+)
+from plugin.plugins._shared.rapidocr.rapidocr_support import (
+    load_rapidocr_runtime as _load_rapidocr_runtime,
+)
+
+from .aihong_state import (
+    AIHONG_DIALOGUE_STAGE as _AIHONG_DIALOGUE_STAGE,
+)
+from .aihong_state import AIHONG_MENU_STAGE as _reexport_AIHONG_MENU_STAGE
+from .aihong_state import coerce_aihong_menu_choices as _reexport_coerce_aihong_menu_choices
+from .aihong_state import looks_like_aihong_menu_status_only_text as _reexport_looks_like_aihong_menu_status_only_text
 from .models import (
-    ADVANCE_SPEED_FAST,
     ADVANCE_SPEED_MEDIUM,
-    ADVANCE_SPEED_SLOW,
     ADVANCE_SPEEDS,
-    DATA_SOURCE_OCR_READER,
-    DEFAULT_OCR_CAPTURE_BOTTOM_INSET_RATIO,
-    DEFAULT_OCR_CAPTURE_LEFT_INSET_RATIO,
-    DEFAULT_OCR_CAPTURE_RIGHT_INSET_RATIO,
-    DEFAULT_OCR_CAPTURE_TOP_RATIO,
     DEFAULT_VISION_CLASSIFIER_MODEL_DIR,
-    GalgameConfig,
-    MENU_PREFIX_RE as _MENU_PREFIX_RE,
-    OCR_CAPTURE_PROFILE_STAGE_CONFIG,
-    OCR_CAPTURE_PROFILE_STAGE_GALLERY,
-    OCR_CAPTURE_PROFILE_STAGE_GAME_OVER,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_BUCKET_ASPECT_NEAREST,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_BUCKET_EXACT,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_BUILTIN_PRESET,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_CONFIG_DEFAULT,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_PROCESS_FALLBACK,
-    OCR_CAPTURE_PROFILE_RATIO_KEYS,
-    OCR_CAPTURE_PROFILE_STAGE_DEFAULT,
-    OCR_CAPTURE_PROFILE_STAGE_DIALOGUE,
-    OCR_CAPTURE_PROFILE_STAGE_MINIGAME,
-    OCR_CAPTURE_PROFILE_STAGE_MENU,
-    OCR_CAPTURE_PROFILE_STAGE_SAVE_LOAD,
     OCR_CAPTURE_PROFILE_STAGE_TITLE,
-    OCR_CAPTURE_PROFILE_STAGE_TRANSITION,
-    OCR_CAPTURE_PROFILE_WINDOW_BUCKETS_KEY,
     OCR_TRIGGER_MODE_AFTER_ADVANCE,
     READER_MODE_AUTO,
     READER_MODE_MEMORY,
-    build_ocr_capture_profile_bucket_key,
-    compute_ocr_window_aspect_ratio,
-    json_copy,
-    sanitize_screen_ui_elements,
-    parse_ocr_capture_profile_bucket_key,
+    GalgameConfig,
 )
-from .ocr_chrome_noise import (
-    looks_like_temperature_status_line as _looks_like_temperature_status_line,
-    looks_like_window_title_line as _looks_like_window_title_line,
+from .ocr_bridge_writer import OcrBackendDescriptor as OcrBackendDescriptor
+from .ocr_bridge_writer import OcrCaptureProfile as OcrCaptureProfile
+from .ocr_bridge_writer import OcrTextBox as OcrTextBox
+from .ocr_bridge_writer import os as os
+from .ocr_capture_backends import DxcamCaptureBackend as DxcamCaptureBackend
+from .ocr_capture_backends import MssCaptureBackend as MssCaptureBackend
+from .ocr_capture_backends import PrintWindowCaptureBackend as PrintWindowCaptureBackend
+from .ocr_capture_backends import PyAutoGuiCaptureBackend as PyAutoGuiCaptureBackend
+from .ocr_capture_backends import _crop_image_to_screen_rect as _crop_image_to_screen_rect
+from .ocr_capture_backends import _crop_window_image as _crop_window_image
+from .ocr_capture_backends import _is_window_on_primary_monitor as _is_window_on_primary_monitor
+from .ocr_capture_backends import _require_visible_capture_target as _require_visible_capture_target
+from .ocr_capture_backends import _run_with_thread_dpi_awareness as _run_with_thread_dpi_awareness
+from .ocr_capture_backends import _target_client_rect as _target_client_rect
+from .ocr_capture_backends import _target_monitor_work_rect as _target_monitor_work_rect
+from .ocr_capture_backends import _target_monitor_work_rects as _target_monitor_work_rects
+from .ocr_capture_backends import _target_screen_capture_rect as _target_screen_capture_rect
+from .ocr_capture_backends import _target_window_capture_state as _target_window_capture_state
+from .ocr_capture_backends import _target_window_rect as _target_window_rect
+from .ocr_capture_backends import _target_window_rect_linux as _target_window_rect_linux
+from .ocr_capture_backends import _target_window_rect_macos as _target_window_rect_macos
+from .ocr_capture_backends import (
+    _target_window_uses_overlapped_chrome as _target_window_uses_overlapped_chrome,
 )
-from .aihong_state import (
-    AIHONG_CHOICES_REGION_PRESET as _AIHONG_CHOICES_REGION_PRESET,
-    AIHONG_DIALOGUE_CAPTURE_PROFILE_PRESET as _AIHONG_DIALOGUE_CAPTURE_PROFILE_PRESET,
-    AIHONG_DIALOGUE_STAGE as _AIHONG_DIALOGUE_STAGE,
-    AIHONG_MENU_CAPTURE_PROFILE_PRESET as _AIHONG_MENU_CAPTURE_PROFILE_PRESET,
-    AIHONG_MENU_MAX_LINES as _AIHONG_MENU_MAX_LINES,
-    AIHONG_MENU_MAX_SIGNIFICANT_CHARS as _AIHONG_MENU_MAX_SIGNIFICANT_CHARS,
-    AIHONG_MENU_STAGE as _AIHONG_MENU_STAGE,
-    coerce_aihong_menu_choices as _coerce_aihong_menu_choices,
-    levenshtein_distance as _levenshtein_distance,
-    looks_like_aihong_menu_status_only_text as _looks_like_aihong_menu_status_only_text,
-    matches_aihong_target as _matches_aihong_target_info,
-    normalize_aihong_choice_box_text as _normalize_aihong_choice_box_text,
+from .ocr_runtime_types import _BACKGROUND_HASH_BOTTOM_INSET_RATIO as _BACKGROUND_HASH_BOTTOM_INSET_RATIO
+from .ocr_runtime_types import _BACKGROUND_SCENE_CHANGE_DISTANCE as _BACKGROUND_SCENE_CHANGE_DISTANCE
+from .ocr_runtime_types import _BACKGROUND_SCENE_HASH_SIZE as _BACKGROUND_SCENE_HASH_SIZE
+from .ocr_runtime_types import _CAPTURE_BACKEND_AUTO as _CAPTURE_BACKEND_AUTO
+from .ocr_runtime_types import _CAPTURE_BACKEND_DXCAM as _CAPTURE_BACKEND_DXCAM
+from .ocr_runtime_types import _CAPTURE_BACKEND_MSS as _CAPTURE_BACKEND_MSS
+from .ocr_runtime_types import _CAPTURE_BACKEND_PRINTWINDOW as _CAPTURE_BACKEND_PRINTWINDOW
+from .ocr_runtime_types import _CAPTURE_BACKEND_PYAUTOGUI as _CAPTURE_BACKEND_PYAUTOGUI
+from .ocr_runtime_types import _CJK_CHAR_RE as _CJK_CHAR_RE
+from .ocr_runtime_types import _DXCAM_GRAB_RETRY_ATTEMPTS as _DXCAM_GRAB_RETRY_ATTEMPTS
+from .ocr_runtime_types import _DXCAM_GRAB_RETRY_DELAY_SECONDS as _DXCAM_GRAB_RETRY_DELAY_SECONDS
+from .ocr_runtime_types import _KANA_CHAR_RE as _KANA_CHAR_RE
+from .ocr_runtime_types import _LOGGER as _LOGGER
+from .ocr_runtime_types import _OCR_CAPTURE_TIMEOUT_SECONDS as _OCR_CAPTURE_TIMEOUT_SECONDS
+from .ocr_runtime_types import (
+    _OCR_LINE_ID_MAX_COLLISION_SUFFIX as _OCR_LINE_ID_MAX_COLLISION_SUFFIX,
 )
-from plugin.plugins._shared.rapidocr.rapidocr_support import (
-    inspect_rapidocr_installation as _inspect_rapidocr_installation,
-    load_rapidocr_runtime as _load_rapidocr_runtime,
+from .ocr_runtime_types import _OCR_PREPARE_MAX_LONG_EDGE as _OCR_PREPARE_MAX_LONG_EDGE
+from .ocr_runtime_types import _OCR_PREPARE_TARGET_LONG_EDGE as _OCR_PREPARE_TARGET_LONG_EDGE
+from .ocr_runtime_types import _OCR_PREPARE_UPSCALE_SOURCE_LONG_EDGE as _OCR_PREPARE_UPSCALE_SOURCE_LONG_EDGE
+from .ocr_runtime_types import (
+    _OCR_SHUTDOWN_CAPTURE_DRAIN_TIMEOUT_SECONDS as _OCR_SHUTDOWN_CAPTURE_DRAIN_TIMEOUT_SECONDS,
 )
-from .reader import normalize_text
+from .ocr_runtime_types import _PENDING_VISUAL_SCENE_MAX_SECONDS as _PENDING_VISUAL_SCENE_MAX_SECONDS
+from .ocr_runtime_types import _RAPIDOCR_INFERENCE_LOCK as _RAPIDOCR_INFERENCE_LOCK
+from .ocr_runtime_types import _RAPIDOCR_RUNTIME_CACHE as _RAPIDOCR_RUNTIME_CACHE
+from .ocr_runtime_types import _RAPIDOCR_RUNTIME_CACHE_LOCK as _RAPIDOCR_RUNTIME_CACHE_LOCK
+from .ocr_runtime_types import _RAPIDOCR_RUNTIME_IDLE_TTL_SECONDS as _RAPIDOCR_RUNTIME_IDLE_TTL_SECONDS
+from .ocr_runtime_types import _CaptureStillRunning as _CaptureStillRunning
+from .ocr_runtime_types import _CaptureTimedOut as _CaptureTimedOut
+from .ocr_runtime_types import _classify_cjk_text as _classify_cjk_text
+from .ocr_runtime_types import _clean_ocr_dialogue_text as _clean_ocr_dialogue_text
+from .ocr_runtime_types import _drop_ocr_chrome_noise_lines as _drop_ocr_chrome_noise_lines
+from .ocr_runtime_types import _filter_boxes_to_region as _filter_boxes_to_region
+from .ocr_runtime_types import _fix_ocr_punctuation_confusion as _fix_ocr_punctuation_confusion
+from .ocr_runtime_types import _get_rapidocr_runtime_cache as _get_rapidocr_runtime_cache
+from .ocr_runtime_types import _join_ocr_segments as _join_ocr_segments
+from .ocr_runtime_types import _looks_like_game_overlay_text as _looks_like_game_overlay_text
+from .ocr_runtime_types import _looks_like_noise_ocr_text as _looks_like_noise_ocr_text
+from .ocr_runtime_types import _looks_like_ocr_dialogue_normalized_text as _looks_like_ocr_dialogue_normalized_text
+from .ocr_runtime_types import _ocr_game_id_from_process as _ocr_game_id_from_process
+from .ocr_runtime_types import _ocr_stability_key as _ocr_stability_key
+from .ocr_runtime_types import _ocr_stability_keys_match as _ocr_stability_keys_match
+from .ocr_runtime_types import _perceptual_hash_image as _perceptual_hash_image
+from .ocr_runtime_types import _prepare_ocr_image as _prepare_ocr_image
+from .ocr_runtime_types import _rapidocr_lines_from_output as _rapidocr_lines_from_output
+from .ocr_runtime_types import _rapidocr_points as _rapidocr_points
+from .ocr_runtime_types import _rapidocr_runtime_cache_key as _rapidocr_runtime_cache_key
+from .ocr_runtime_types import _rapidocr_text_from_output as _rapidocr_text_from_output
+from .ocr_runtime_types import _rapidocr_tokens_from_output as _rapidocr_tokens_from_output
+from .ocr_runtime_types import _RapidOcrToken as _RapidOcrToken
+from .ocr_runtime_types import _score_ocr_text as _score_ocr_text
+from .ocr_runtime_types import _should_insert_ascii_space as _should_insert_ascii_space
+from .ocr_runtime_types import _significant_char_count as _significant_char_count
+from .ocr_runtime_types import _store_rapidocr_runtime_cache as _store_rapidocr_runtime_cache
+from .ocr_runtime_types import _weighted_ocr_score as _weighted_ocr_score
+from .ocr_runtime_types import utc_now_iso as utc_now_iso
+from .ocr_window_scanner import _classify_window_candidate as _classify_window_candidate
+from .ocr_window_scanner import _foreground_window_handle as _foreground_window_handle
+from .ocr_window_scanner import _is_confident_auto_window as _is_confident_auto_window
+from .ocr_window_scanner import _is_legacy_geometryless_auto_window as _is_legacy_geometryless_auto_window
+from .ocr_window_scanner import _root_window_handle as _root_window_handle
+from .ocr_window_scanner import _window_handle_from_point as _window_handle_from_point
+from .ocr_window_scanner import _window_process_id as _window_process_id
+from .ocr_window_scanner import _window_sort_key as _window_sort_key
+from .reader import normalize_text as normalize_text
 from .screen_classifier import (
     ScreenClassification,
-    classify_screen_awareness_model,
-    classify_screen_from_ocr,
-    normalize_screen_type,
 )
-from .screen_classifier import analyze_screen_visual_features
 
 try:
     from PIL import Image as _PIL_IMAGE_MODULE
@@ -98,25 +136,52 @@ try:
 except ImportError:  # pragma: no cover - optional in non-visual test environments.
     _PIL_RESAMPLING = None
 
-from .ocr_runtime_types import *
-from .ocr_backend_interface import *
-
-from .ocr_capture_backends import *
-from .ocr_rapidocr_backend import *
-from .ocr_input_hooks import *
+from .ocr_bridge_writer import (
+    CaptureBackend,
+    DetectedGameWindow,
+    OcrBackend,
+    OcrExtractionResult,
+    OcrReaderBridgeWriter,
+    OcrReaderRuntime,
+    OcrReaderTickResult,
+    OcrWindowTarget,
+    ParsedOcrCaptureProcessConfig,
+    SelectedOcrBackendPlan,
+    WindowSelectionResult,
+)
+from .ocr_capture_backends import (
+    Win32CaptureBackend,
+)
+from .ocr_input_hooks import (
+    ForegroundAdvanceConsumeResult,
+    _MouseWheelEvent,
+    _MouseWheelMonitor,
+)
+from .ocr_manager_capture import CaptureMixin
+from .ocr_manager_observe import ObserveMixin
+from .ocr_manager_poll import PollMixin
+from .ocr_manager_runtime import RuntimeMixin
+from .ocr_manager_text import DialoguePipeline, TextMixin
+from .ocr_rapidocr_backend import (
+    RapidOcrBackend,
+)
+from .ocr_runtime_types import (
+    _FOREGROUND_ADVANCE_STABLE_GRACE_SECONDS,
+    _KEYBOARD_ADVANCE_VK_CODES,
+    _KNOWN_SCREEN_SKIP_BYPASS_SECONDS,
+    _OcrLangDetector,
+    _StableOcrTextState,
+)
 from .ocr_window_scanner import (
-    _classify_window_candidate, _default_window_scanner, _foreground_matches_target,
-    _foreground_window_handle, _is_confident_auto_window, _is_legacy_geometryless_auto_window,
-    _is_windows_platform, _platform_scan_windows, _root_window_handle, _window_handle_from_point,
-    _window_process_id, _window_process_name, _window_sort_key,
+    _default_window_scanner,
+    _foreground_matches_target,
+    _is_windows_platform,
+    _platform_scan_windows,
 )
 
-from .ocr_bridge_writer import *
-from .ocr_manager_capture import CaptureMixin
-from .ocr_manager_text import DialoguePipeline, TextMixin
-from .ocr_manager_poll import PollMixin
-from .ocr_manager_observe import ObserveMixin
-from .ocr_manager_runtime import RuntimeMixin
+_AIHONG_MENU_STAGE = _reexport_AIHONG_MENU_STAGE
+_coerce_aihong_menu_choices = _reexport_coerce_aihong_menu_choices
+_looks_like_aihong_menu_status_only_text = _reexport_looks_like_aihong_menu_status_only_text
 
 
 def inspect_rapidocr_installation(**kwargs):

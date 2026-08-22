@@ -18,6 +18,7 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 
+from plugin.plugins._shared.rapidocr.rapidocr_support import DEFAULT_RAPIDOCR_OCR_VERSION
 from plugin.plugins.galgame_plugin.models import (
     DEFAULT_OCR_CAPTURE_BOTTOM_INSET_RATIO,
     DEFAULT_OCR_CAPTURE_LEFT_INSET_RATIO,
@@ -32,7 +33,6 @@ from plugin.plugins.galgame_plugin.ocr_reader import (
     Win32CaptureBackend,
     _default_window_scanner,
 )
-from plugin.plugins._shared.rapidocr.rapidocr_support import DEFAULT_RAPIDOCR_OCR_VERSION
 
 
 def _noop_logger():

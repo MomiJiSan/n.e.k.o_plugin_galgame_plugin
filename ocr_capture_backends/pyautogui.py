@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 from typing import Any
-from ..ocr_runtime_types import DetectedGameWindow, OcrCaptureProfile, _CAPTURE_BACKEND_PYAUTOGUI
+
+from ..ocr_runtime_types import _CAPTURE_BACKEND_PYAUTOGUI, DetectedGameWindow, OcrCaptureProfile
 from ._helpers import (
     _crop_window_image,
     _require_foreground_screen_capture_target,
@@ -75,8 +77,6 @@ class PyAutoGuiCaptureBackend:
         # RuntimeError. Catch broadly so backend probing degrades cleanly to
         # "unavailable" instead of bubbling up and aborting capture preflight.
         try:
-            import pyautogui  # noqa: F401 — gate on user-facing label
-            from PIL import ImageGrab  # noqa: F401 — actual capture mechanism
             return True
         except Exception as exc:
             self._availability_error = str(exc)

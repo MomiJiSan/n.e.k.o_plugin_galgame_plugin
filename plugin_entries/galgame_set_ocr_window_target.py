@@ -1,5 +1,16 @@
 from __future__ import annotations
-from ._common import *  # noqa: F401, F403
+
+from ._common import (
+    STORE_OCR_WINDOW_TARGET,
+    Err,
+    Ok,
+    SdkError,
+    _log_plugin_noncritical,
+    asyncio,
+    json_copy,
+    plugin_entry,
+    tr,
+)
 
 
 class _GalgameSetOcrWindowTargetMixin:

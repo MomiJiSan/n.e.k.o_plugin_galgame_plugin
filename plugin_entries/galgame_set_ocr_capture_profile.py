@@ -1,5 +1,15 @@
 from __future__ import annotations
-from ._common import *  # noqa: F401, F403
+
+from ._common import (
+    OCR_CAPTURE_PROFILE_SAVE_SCOPES,
+    OCR_CAPTURE_PROFILE_STAGE_DEFAULT,
+    OCR_CAPTURE_PROFILE_STAGES,
+    Err,
+    Ok,
+    SdkError,
+    plugin_entry,
+    tr,
+)
 
 
 class _GalgameSetOcrCaptureProfileMixin:

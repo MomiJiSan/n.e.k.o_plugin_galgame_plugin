@@ -14,8 +14,8 @@ backend appears in the chain only as a tail fallback there.
 from __future__ import annotations
 
 import base64
-import ipaddress
 import io
+import ipaddress
 import logging
 import os
 import re

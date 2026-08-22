@@ -1,5 +1,15 @@
 from __future__ import annotations
-from ._common import *  # noqa: F401, F403
+
+from ._common import (
+    _OCR_BACKEND_SELECTIONS,
+    _OCR_CAPTURE_BACKEND_SELECTIONS,
+    Err,
+    Ok,
+    SdkError,
+    _log_plugin_noncritical,
+    plugin_entry,
+    tr,
+)
 
 
 class _GalgameSetOcrBackendMixin:

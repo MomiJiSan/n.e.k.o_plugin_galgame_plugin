@@ -3,13 +3,13 @@ from __future__ import annotations
 from typing import Any
 
 from .models import (
-    compute_ocr_window_aspect_ratio,
-    json_copy,
     OCR_CAPTURE_PROFILE_RATIO_KEYS,
     OCR_CAPTURE_PROFILE_SAVE_SCOPES,
     OCR_CAPTURE_PROFILE_STAGE_DEFAULT,
     OCR_CAPTURE_PROFILE_STAGES,
     OCR_CAPTURE_PROFILE_WINDOW_BUCKETS_KEY,
+    compute_ocr_window_aspect_ratio,
+    json_copy,
     parse_ocr_capture_profile_bucket_key,
 )
 

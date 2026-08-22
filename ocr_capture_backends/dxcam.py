@@ -1,9 +1,18 @@
 from __future__ import annotations
+
 import queue
-import time
 import threading
+import time
 from typing import Any
-from ..ocr_runtime_types import DetectedGameWindow, OcrCaptureProfile, _CAPTURE_BACKEND_DXCAM, _DXCAM_GRAB_RETRY_ATTEMPTS, _DXCAM_GRAB_RETRY_DELAY_SECONDS, _STALE_CAPTURE_FRAME_THRESHOLD, _LOGGER
+
+from ..ocr_runtime_types import (
+    _CAPTURE_BACKEND_DXCAM,
+    _DXCAM_GRAB_RETRY_ATTEMPTS,
+    _DXCAM_GRAB_RETRY_DELAY_SECONDS,
+    _LOGGER,
+    DetectedGameWindow,
+    OcrCaptureProfile,
+)
 from ._helpers import (
     _crop_window_image,
     _require_foreground_screen_capture_target,

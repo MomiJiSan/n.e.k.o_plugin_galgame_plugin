@@ -1,97 +1,23 @@
 from __future__ import annotations
 
-import asyncio
 import base64
-from concurrent.futures import Future, ThreadPoolExecutor
-import ctypes
-from datetime import datetime, timezone
-import hashlib
 import io
-import json
-import logging
-import os
 import re
-import shutil
-import sys
-import tempfile
-import threading
-import time
-from collections import deque
-from ctypes import wintypes
-from dataclasses import dataclass, field, replace
-from functools import wraps
-from pathlib import Path
-from typing import Any, Callable, ClassVar, Iterable, Protocol
-from uuid import uuid4
+from dataclasses import dataclass, replace
+from datetime import datetime, timezone
+from typing import Any
 
-from .models import (
-    ADVANCE_SPEED_FAST,
-    ADVANCE_SPEED_MEDIUM,
-    ADVANCE_SPEED_SLOW,
-    ADVANCE_SPEEDS,
-    DATA_SOURCE_OCR_READER,
-    DEFAULT_OCR_CAPTURE_BOTTOM_INSET_RATIO,
-    DEFAULT_OCR_CAPTURE_LEFT_INSET_RATIO,
-    DEFAULT_OCR_CAPTURE_RIGHT_INSET_RATIO,
-    DEFAULT_OCR_CAPTURE_TOP_RATIO,
-    GalgameConfig,
-    MENU_PREFIX_RE as _MENU_PREFIX_RE,
-    OCR_CAPTURE_PROFILE_STAGE_CONFIG,
-    OCR_CAPTURE_PROFILE_STAGE_GALLERY,
-    OCR_CAPTURE_PROFILE_STAGE_GAME_OVER,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_BUCKET_ASPECT_NEAREST,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_BUCKET_EXACT,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_BUILTIN_PRESET,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_CONFIG_DEFAULT,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_PROCESS_FALLBACK,
-    OCR_CAPTURE_PROFILE_RATIO_KEYS,
-    OCR_CAPTURE_PROFILE_STAGE_DEFAULT,
-    OCR_CAPTURE_PROFILE_STAGE_DIALOGUE,
-    OCR_CAPTURE_PROFILE_STAGE_MINIGAME,
-    OCR_CAPTURE_PROFILE_STAGE_MENU,
-    OCR_CAPTURE_PROFILE_STAGE_SAVE_LOAD,
-    OCR_CAPTURE_PROFILE_STAGE_TITLE,
-    OCR_CAPTURE_PROFILE_STAGE_TRANSITION,
-    OCR_CAPTURE_PROFILE_WINDOW_BUCKETS_KEY,
-    OCR_TRIGGER_MODE_AFTER_ADVANCE,
-    READER_MODE_AUTO,
-    READER_MODE_MEMORY,
-    build_ocr_capture_profile_bucket_key,
-    compute_ocr_window_aspect_ratio,
-    json_copy,
-    sanitize_screen_ui_elements,
-    parse_ocr_capture_profile_bucket_key,
-)
-from .ocr_chrome_noise import (
-    looks_like_temperature_status_line as _looks_like_temperature_status_line,
-    looks_like_window_title_line as _looks_like_window_title_line,
-)
 from .aihong_state import (
-    AIHONG_CHOICES_REGION_PRESET as _AIHONG_CHOICES_REGION_PRESET,
-    AIHONG_DIALOGUE_CAPTURE_PROFILE_PRESET as _AIHONG_DIALOGUE_CAPTURE_PROFILE_PRESET,
     AIHONG_DIALOGUE_STAGE as _AIHONG_DIALOGUE_STAGE,
-    AIHONG_MENU_CAPTURE_PROFILE_PRESET as _AIHONG_MENU_CAPTURE_PROFILE_PRESET,
-    AIHONG_MENU_MAX_LINES as _AIHONG_MENU_MAX_LINES,
-    AIHONG_MENU_MAX_SIGNIFICANT_CHARS as _AIHONG_MENU_MAX_SIGNIFICANT_CHARS,
-    AIHONG_MENU_STAGE as _AIHONG_MENU_STAGE,
-    coerce_aihong_menu_choices as _coerce_aihong_menu_choices,
-    levenshtein_distance as _levenshtein_distance,
-    looks_like_aihong_menu_status_only_text as _looks_like_aihong_menu_status_only_text,
-    matches_aihong_target as _matches_aihong_target_info,
-    normalize_aihong_choice_box_text as _normalize_aihong_choice_box_text,
 )
-from plugin.plugins._shared.rapidocr.rapidocr_support import (
-    inspect_rapidocr_installation,
-    load_rapidocr_runtime,
+from .models import (
+    READER_MODE_AUTO,
+    json_copy,
 )
 from .reader import normalize_text
 from .screen_classifier import (
-    ScreenClassification,
-    classify_screen_awareness_model,
-    classify_screen_from_ocr,
     normalize_screen_type,
 )
-from .screen_classifier import analyze_screen_visual_features
 
 try:
     from PIL import Image as _PIL_IMAGE_MODULE
@@ -105,22 +31,43 @@ try:
 except ImportError:  # pragma: no cover
     psutil = None
 
-from .ocr_runtime_types import *
-from .ocr_backend_interface import *
-
-from .ocr_capture_backends import *
-
-from .ocr_rapidocr_backend import *
-from .ocr_input_hooks import *
-from .ocr_bridge_writer import *
 from . import ocr_reader as _ocr_reader_module
-from .ocr_reader import (
+from .ocr_bridge_writer import (
+    DetectedGameWindow,
+    OcrExtractionResult,
+    OcrWindowTarget,
+    WindowSelectionResult,
+    utc_now_iso,
+)
+from .ocr_runtime_types import (
+    _BACKGROUND_CANDIDATE_EARLY_CANDIDATE_MAX_SECONDS,
+    _BACKGROUND_CANDIDATE_EARLY_COMMIT_DISTANCE_MARGIN,
+    _BACKGROUND_CANDIDATE_EARLY_COMMIT_TEXT_GAP_SECONDS,
+    _BACKGROUND_SCENE_CHANGE_CONFIRM_POLLS,
+    _BACKGROUND_SCENE_CHANGE_DISTANCE,
+    _BACKGROUND_SCENE_CHANGE_FORCE_DISTANCE,
+    _DIALOGUE_BLOCK_CONTINUATION_MAX_SECONDS,
+    _DIALOGUE_BLOCK_NO_TEXT_GAP_POLLS,
+    _DIALOGUE_BLOCK_SCREEN_TYPES,
+    _DIALOGUE_BOUNDARY_SCREEN_TYPES,
+    _DIALOGUE_BOUNDARY_TITLE_RE,
+    _SCENE_CHANGE_COOLDOWN_SECONDS,
+    _VISION_SNAPSHOT_JPEG_QUALITY,
+    _VISION_SNAPSHOT_TTL_SECONDS,
+    _WINDOW_SCAN_CACHE_TTL_SECONDS,
+    _looks_like_ocr_dialogue_normalized_text,
+    _looks_like_ocr_dialogue_text,
+    _lookup_capture_profile,
+    _perceptual_hash_image,
+)
+from .ocr_window_scanner import (
     _classify_window_candidate,
     _foreground_matches_target,
     _is_confident_auto_window,
     _is_legacy_geometryless_auto_window,
     _window_sort_key,
 )
+
 
 def _foreground_window_handle() -> int:
     return _ocr_reader_module._foreground_window_handle()

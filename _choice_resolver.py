@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from .models import SharedStatePayload
 from ._input_primitives import (
     _coerce_rect,
     _coerce_source_size,
     _rect_payload,
     _relative_point_forbidden_zone,
 )
-
+from .models import SharedStatePayload
 
 SYSTEM_MENU_MARKERS = (
     "SYSTEM",

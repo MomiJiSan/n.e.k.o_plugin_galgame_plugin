@@ -1,8 +1,19 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Iterable
+from typing import TYPE_CHECKING, Any, Iterable
 
+if TYPE_CHECKING:
+    from .screen_classifier import _OcrRegion
+
+from ._layout import _normalized_bounds
+from ._ocr_utils import (
+    _BRACKET_SPEAKER_RE,
+    _DIALOGUE_COLON_RE,
+    _SPEAKER_QUOTE_RE,
+    _dedupe_preserve_order,
+    _visible_len,
+)
 from .models import sanitize_screen_ui_elements
 from .ocr_chrome_noise import (
     TEMPERATURE_STATUS_BOTTOM_MIN_RATIO,
@@ -11,19 +22,6 @@ from .ocr_chrome_noise import (
     looks_like_temperature_status_line,
     looks_like_window_title_line,
 )
-
-from ._layout import _normalized_bounds
-from ._ocr_utils import (
-    _BRACKET_SPEAKER_RE,
-    _DIALOGUE_COLON_RE,
-    _SPEAKER_QUOTE_RE,
-    _bounded_raw_text,
-    _confidence,
-    _dedupe_preserve_order,
-    _float,
-    _visible_len,
-)
-
 
 SCREEN_UI_ELEMENT_LIMIT = 10
 _CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")

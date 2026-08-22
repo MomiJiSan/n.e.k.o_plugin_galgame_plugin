@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from .agent_shared import *  # noqa: F401,F403
+from .agent_shared import (
+    Any,
+)
 
 
 class AgentSceneTracker:
@@ -451,7 +453,6 @@ class AgentSceneTracker:
                 route_id=self.summary_route_id,
             )
             return
-        scheduled_seq = int(seq or 0)
         state["last_scheduled_seq"] = int(seq or 0)
         if int(state.get("lines_since_push") or 0) <= 0:
             state["pending_since_monotonic"] = 0.0

@@ -9,10 +9,9 @@ import sys
 import threading
 from typing import Any
 
-from .models import GalgameConfig
 from ._types import MEMORY_READER_DEFAULT_ENGINE, TextractorProcessHandle
 from ._win32_job_objects import _track_textractor_process, _untrack_textractor_process
-
+from .models import GalgameConfig
 
 _LOGGER = logging.getLogger(__name__)
 

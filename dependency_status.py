@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from typing import Any
-
 
 # After PR #1188 + #1191 the runtime pip-install path was removed for rapidocr
 # and dxcam (they're bundled main-program deps now). Textractor still has a

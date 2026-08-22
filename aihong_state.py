@@ -4,6 +4,8 @@ import re
 
 from .models import (
     MENU_PREFIX_RE as _MENU_PREFIX_RE,
+)
+from .models import (
     OCR_CAPTURE_PROFILE_STAGE_DIALOGUE,
     OCR_CAPTURE_PROFILE_STAGE_MENU,
 )

@@ -7,14 +7,13 @@ import threading
 from ctypes import wintypes
 from typing import Any
 
-from .models import DATA_SOURCE_OCR_READER, SharedStatePayload
 from ._win32_input_types import (
     PROCESS_QUERY_LIMITED_INFORMATION,
     SW_RESTORE,
     TOKEN_QUERY,
     TokenElevation,
 )
-
+from .models import DATA_SOURCE_OCR_READER, SharedStatePayload
 
 _LAST_FOCUS_WINDOW_DIAGNOSTIC = ""
 _LAST_FOCUS_WINDOW_DIAGNOSTIC_LOCK = threading.Lock()

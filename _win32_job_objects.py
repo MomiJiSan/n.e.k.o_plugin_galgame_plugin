@@ -6,7 +6,6 @@ import subprocess
 import sys
 import threading
 
-
 _TEXTRACTOR_PROCESS_LOCK = threading.Lock()
 _TEXTRACTOR_PROCESSES: set[subprocess.Popen] = set()
 _TEXTRACTOR_JOB_HANDLES: dict[subprocess.Popen, int] = {}

@@ -1,71 +1,66 @@
 from __future__ import annotations
 
 import asyncio
-import atexit
-import ctypes
+import ctypes as ctypes
 import hashlib
 import json
 import logging
 import os
-import queue
-import shutil
-import subprocess
+import re
+import subprocess as subprocess
+import sys
 import threading
+import time
 import types as _types
 from collections import OrderedDict
-from dataclasses import dataclass, field
 from pathlib import Path
-import re
-import sys
-import time
-from typing import Any, Awaitable, Callable, Protocol
+from typing import Any, Awaitable, Callable
 from uuid import uuid4
+
+from ._process_detection import _KIRIKIRI_DIR_CACHE as _KIRIKIRI_DIR_CACHE
+from ._process_detection import _KIRIKIRI_DIR_CACHE_LOCK as _KIRIKIRI_DIR_CACHE_LOCK
+from ._textractor_handle import _AsyncioTextractorHandle as _AsyncioTextractorHandle
+from ._textractor_paths import TEXTRACTOR_EXECUTABLE as TEXTRACTOR_EXECUTABLE
+from ._win32_job_objects import _create_kill_on_close_job_for_process as _create_kill_on_close_job_for_process
 
 try:
     import psutil
 except ImportError:  # pragma: no cover - psutil is available in the project runtime.
     psutil = None
 
-from .models import (
-    DATA_SOURCE_MEMORY_READER,
-    GalgameConfig,
-    MENU_PREFIX_RE as _MENU_PREFIX_RE,
-    sanitize_choice,
-    sanitize_save_context,
+from ._process_detection import (
+    _default_process_inventory,
+    _default_process_scanner,
+    _engine_from_text,
 )
-from .reader import normalize_text
-
+from ._textractor_handle import (
+    _default_process_factory,
+    _is_event_loop_binding_error,
+    _select_hook_codes_for_engine,
+    _textractor_hook_command,
+)
+from ._textractor_paths import (
+    resolve_textractor_path,
+)
 from ._types import (
-    DetectedGameProcess,
     MEMORY_READER_DEFAULT_ENGINE,
+    DetectedGameProcess,
     MemoryReaderProcessTarget,
     MemoryReaderRuntime,
     MemoryReaderTickResult,
     ParsedTextractorLine,
     TextractorProcessHandle,
 )
-from ._textractor_paths import (
-    TEXTRACTOR_EXECUTABLE,
-    resolve_textractor_path,
+from .models import (
+    DATA_SOURCE_MEMORY_READER,
+    GalgameConfig,
+    sanitize_choice,
+    sanitize_save_context,
 )
-from ._process_detection import (
-    _default_process_inventory,
-    _default_process_scanner,
-    _engine_from_text,
-    _scan_processes,
-    _KIRIKIRI_DIR_CACHE,
-    _KIRIKIRI_DIR_CACHE_LOCK,
+from .models import (
+    MENU_PREFIX_RE as _MENU_PREFIX_RE,
 )
-from ._textractor_handle import (
-    _AsyncioTextractorHandle,
-    _decode_textractor_stdout_line,
-    _default_process_factory,
-    _is_event_loop_binding_error,
-    _select_hook_codes_for_engine,
-    _textractor_hook_command,
-)
-from . import _win32_job_objects  # noqa: F401  # registers atexit handler
-from ._win32_job_objects import _create_kill_on_close_job_for_process
+from .reader import normalize_text
 
 MEMORY_READER_VERSION = "0.1.0"
 MEMORY_READER_BRIDGE_VERSION = f"memory-reader-{MEMORY_READER_VERSION}"

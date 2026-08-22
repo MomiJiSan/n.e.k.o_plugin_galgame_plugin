@@ -12,7 +12,6 @@ from ...models import (
     OCR_CAPTURE_PROFILE_STAGE_TRANSITION,
 )
 
-
 GALGAME_VISION_LABELS: tuple[str, ...] = (
     "dialogue",
     "choice_menu",

@@ -29,7 +29,6 @@ from .llm_prompts import (
     CONSULT_CAT_STORY_PROGRESS_QUESTION_TEMPLATE,
 )
 
-
 CONSULT_COOLDOWN_SECONDS: float = 30.0
 """Lower bound on time between consultations (any reason)."""
 

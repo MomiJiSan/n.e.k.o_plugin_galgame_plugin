@@ -6,7 +6,6 @@ from typing import Any, Mapping
 
 from .models import json_copy
 
-
 _EXPLAIN_EVIDENCE_TYPES = frozenset({"current_line", "history_line", "choice"})
 _KEY_POINT_TYPES = frozenset({"plot", "emotion", "decision", "reveal", "objective"})
 _LLM_RESPONSE_CACHE_MAX_ITEMS = 50

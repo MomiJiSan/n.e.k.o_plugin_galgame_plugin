@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 _TITLE_KEYWORDS = (
     "start",
     "new game",

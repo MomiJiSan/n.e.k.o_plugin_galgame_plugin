@@ -13,8 +13,7 @@ try:
 except ImportError:  # pragma: no cover - psutil is available in the project runtime.
     psutil = None
 
-from ._types import DetectedGameProcess, MEMORY_READER_DEFAULT_ENGINE
-
+from ._types import MEMORY_READER_DEFAULT_ENGINE, DetectedGameProcess
 
 _LOGGER = logging.getLogger(__name__)
 

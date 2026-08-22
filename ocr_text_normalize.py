@@ -6,11 +6,15 @@ from typing import Any, Iterable
 
 from .aihong_state import (
     AIHONG_MENU_MAX_LINES as _AIHONG_MENU_MAX_LINES,
+)
+from .aihong_state import (
     AIHONG_MENU_MAX_SIGNIFICANT_CHARS as _AIHONG_MENU_MAX_SIGNIFICANT_CHARS,
 )
 from .models import MENU_PREFIX_RE as _MENU_PREFIX_RE
 from .ocr_chrome_noise import (
     looks_like_temperature_status_line as _looks_like_temperature_status_line,
+)
+from .ocr_chrome_noise import (
     looks_like_window_title_line as _looks_like_window_title_line,
 )
 from .reader import normalize_text

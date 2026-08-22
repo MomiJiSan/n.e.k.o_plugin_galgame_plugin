@@ -11,7 +11,6 @@ from ._ocr_utils import (
     _visible_len,
 )
 
-
 _LOGGER = logging.getLogger(__name__)
 
 

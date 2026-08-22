@@ -5,13 +5,11 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from PIL import Image
 import torch
-from torch.utils.data import Dataset
-
+from PIL import Image
 from plugin.plugins.galgame_plugin.core.vision.labels import GALGAME_VISION_LABELS
 from plugin.plugins.galgame_plugin.training.shared.augment import build_eval_transform, build_train_transform
-
+from torch.utils.data import Dataset
 
 _LOGGER = logging.getLogger(__name__)
 GALGAME_SCREEN_LABELS: tuple[str, ...] = GALGAME_VISION_LABELS

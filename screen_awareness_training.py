@@ -11,7 +11,6 @@ from typing import Any, Iterable
 from .models import OCR_CAPTURE_PROFILE_STAGE_DEFAULT, OCR_CAPTURE_PROFILE_STAGES, json_copy
 from .screen_classifier import classify_screen_awareness_model, normalize_screen_type
 
-
 DEFAULT_LABEL_FIELDS = (
     "manual_screen_type",
     "manual_label",

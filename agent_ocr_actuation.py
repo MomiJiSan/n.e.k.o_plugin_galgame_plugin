@@ -2,7 +2,21 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .agent_shared import *  # noqa: F401,F403
+from .agent_shared import (
+    _SCREEN_ESCAPE_STRATEGY_IDS,
+    _SCREEN_RECOVERY_STAGES,
+    ADVANCE_SPEED_MEDIUM,
+    DATA_SOURCE_BRIDGE_SDK,
+    DATA_SOURCE_OCR_READER,
+    OCR_CAPTURE_PROFILE_STAGE_MENU,
+    OCR_CAPTURE_PROFILE_STAGE_MINIGAME,
+    VIRTUAL_MOUSE_DIALOGUE_CANDIDATES,
+    Any,
+    build_choice_signature,
+    build_snapshot_signature,
+    sanitize_snapshot_state,
+    time,
+)
 
 
 @dataclass(frozen=True, slots=True)

@@ -4,11 +4,19 @@ import logging
 import sys
 import types as _types
 
-from .agent_shared import *  # noqa: F401,F403
 from .agent_core import GameLLMAgent
 from .agent_message_router import AgentMessageRouter
-from .agent_prompt import _bounded_choice_instruction_text, _context_line_count
+from .agent_prompt import (
+    _bounded_choice_instruction_text as _bounded_choice_instruction_text,
+)
+from .agent_prompt import _context_line_count as _context_line_count
 from .agent_scene_tracker import AgentSceneTracker
+from .agent_shared import (
+    _compute_dynamic_line_limit as _compute_dynamic_line_limit,
+)
+from .agent_shared import build_summarize_context as build_summarize_context
+from .agent_shared import time as time
+from .agent_shared import try_focus_target_window as try_focus_target_window
 
 # Preserve the historical public module path for inspect/pickle-style consumers.
 AgentMessageRouter.__module__ = __name__

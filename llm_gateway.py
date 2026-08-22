@@ -1,27 +1,13 @@
 from __future__ import annotations
 
 import asyncio
-from collections import OrderedDict
-from enum import Enum
 import json
 import logging
-from difflib import SequenceMatcher
 import time
+from collections import OrderedDict
 from typing import Any, Callable, Mapping
 
 from plugin.sdk.shared.models import Err
-
-from .context_metrics import ContextMetric, ContextMetricsCollector
-from .context_tokens import count_tokens_heuristic
-from .llm_backend import GalgameLLMBackend
-from .models import json_copy
-from .service import (
-    build_explain_degraded_result,
-    build_local_scene_summary,
-    build_suggest_degraded_result,
-    build_summarize_degraded_result,
-)
-
 
 from ._gateway_utils import (
     _EXPLAIN_EVIDENCE_TYPES,
@@ -31,27 +17,29 @@ from ._gateway_utils import (
     _LLM_PROVIDER_BACKOFF_SECONDS,
     _LLM_RESPONSE_CACHE_MAX_ITEMS,
     _LOCAL_QUEUE_TIMEOUT_DIAGNOSTIC,
-    _NEAR_MATCH_EXCLUDED_KEYS,
-    _NEAR_MATCH_OBSERVED_SIGNATURE_MAX_CHARS,
     _NEAR_MATCH_SUPPORTED_OPERATIONS,
     _OBSERVED_SIMILARITY_THRESHOLD,
-    _REPEAT_GUARD_MAX_ITEMS,
     _context_lines,
     _current_line_for_near_match,
     _hash_line,
     _hash_stable_lines,
-    _jaccard_similarity,
     _json_payload_copy,
     _line_similarity_signature,
     _near_match_context_value,
-    _ngrams,
-    _normalize_observed_text,
     _observed_similarity,
-    _response_similarity,
     _stable_json_fingerprint,
-    _stable_json_value,
 )
+from ._gateway_utils import _response_similarity as _response_similarity
 from ._repeat_guard import PluginErrorCategory, ResponseRepeatGuard
+from .context_metrics import ContextMetric, ContextMetricsCollector
+from .context_tokens import count_tokens_heuristic
+from .llm_backend import GalgameLLMBackend
+from .service import (
+    build_explain_degraded_result,
+    build_local_scene_summary,
+    build_suggest_degraded_result,
+    build_summarize_degraded_result,
+)
 
 
 class LLMGateway:

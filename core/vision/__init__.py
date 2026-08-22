@@ -1,8 +1,8 @@
 """Vision classifier support for galgame screen classification."""
 
 from .labels import (
-    GALGAME_VISION_LABELS,
     GALGAME_VISION_LABEL_TO_SCREEN_TYPE,
+    GALGAME_VISION_LABELS,
     vision_label_to_screen_type,
 )
 from .preprocessing import IMAGENET_MEAN, IMAGENET_STD, softmax

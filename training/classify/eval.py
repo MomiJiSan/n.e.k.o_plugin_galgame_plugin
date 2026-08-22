@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 import numpy as np
-
 from plugin.plugins.galgame_plugin.training.shared.metrics import macro_f1, top1_accuracy
 
 

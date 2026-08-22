@@ -5,9 +5,9 @@ import ctypes.wintypes
 from typing import Any
 
 from ..ocr_runtime_types import (
+    _CAPTURE_BACKEND_PRINTWINDOW,
     DetectedGameWindow,
     OcrCaptureProfile,
-    _CAPTURE_BACKEND_PRINTWINDOW,
 )
 from ._helpers import (
     _crop_image_to_screen_rect,
@@ -27,9 +27,9 @@ class PrintWindowCaptureBackend:
 
     def is_available(self) -> bool:
         try:
+            import win32con
             import win32gui
             import win32ui
-            import win32con
             return bool(win32gui and win32ui and win32con)
         except ImportError:
             return False

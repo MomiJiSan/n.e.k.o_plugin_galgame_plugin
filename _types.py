@@ -5,7 +5,6 @@ import os
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
-
 MEMORY_READER_DEFAULT_ENGINE = "unknown"
 
 

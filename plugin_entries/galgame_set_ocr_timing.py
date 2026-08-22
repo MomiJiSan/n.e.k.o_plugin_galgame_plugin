@@ -1,5 +1,15 @@
 from __future__ import annotations
-from ._common import *  # noqa: F401, F403
+
+from ._common import (
+    OCR_TRIGGER_MODE_AFTER_ADVANCE,
+    Err,
+    Ok,
+    SdkError,
+    _log_plugin_noncritical,
+    _normalize_ocr_trigger_mode,
+    plugin_entry,
+    tr,
+)
 
 
 class _GalgameSetOcrTimingMixin:

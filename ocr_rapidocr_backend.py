@@ -4,23 +4,24 @@ import threading
 import time
 from typing import Any
 
-from .ocr_runtime_types import (
-    OcrTextBox,
-    _RAPIDOCR_INFERENCE_LOCK,
-    _RAPIDOCR_RUNTIME_CACHE_LOCK,
-    _RAPIDOCR_RUNTIME_IDLE_TTL_SECONDS,
-    _acquire_rapidocr_runtime_cache,
-    _get_rapidocr_runtime_cache,
-    _prepare_ocr_image,
-    _release_rapidocr_runtime_cache,
-    _rapidocr_lines_from_output,
-    _rapidocr_runtime_cache_key,
-    _rapidocr_text_from_output,
-    _store_rapidocr_runtime_cache,
-)
 from plugin.plugins._shared.rapidocr.rapidocr_support import (
     inspect_rapidocr_installation,
     load_rapidocr_runtime,
+)
+
+from .ocr_runtime_types import (
+    _RAPIDOCR_INFERENCE_LOCK,
+    _RAPIDOCR_RUNTIME_CACHE_LOCK,
+    _RAPIDOCR_RUNTIME_IDLE_TTL_SECONDS,
+    OcrTextBox,
+    _acquire_rapidocr_runtime_cache,
+    _get_rapidocr_runtime_cache,
+    _prepare_ocr_image,
+    _rapidocr_lines_from_output,
+    _rapidocr_runtime_cache_key,
+    _rapidocr_text_from_output,
+    _release_rapidocr_runtime_cache,
+    _store_rapidocr_runtime_cache,
 )
 
 __all__ = ["RapidOcrBackend"]

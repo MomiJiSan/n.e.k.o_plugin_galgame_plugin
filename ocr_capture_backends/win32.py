@@ -1,15 +1,33 @@
 from __future__ import annotations
+
 import ctypes
 import ctypes.wintypes
 import threading
-import time
-from typing import Any, Callable
-from ..ocr_runtime_types import DetectedGameWindow, OcrCaptureProfile, _CAPTURE_BACKEND_SMART, _CAPTURE_BACKEND_DXCAM, _CAPTURE_BACKEND_MSS, _CAPTURE_BACKEND_PRINTWINDOW, _CAPTURE_BACKEND_PYAUTOGUI, _CAPTURE_BACKEND_IMAGEGRAB, _CAPTURE_BACKEND_AUTO, _LOGGER
-from ._helpers import _require_visible_capture_target, _require_visible_capture_target_win32, _target_screen_capture_rect, _crop_window_image
-from .mss import MssCaptureBackend
-from .pyautogui import PyAutoGuiCaptureBackend
-from .printwindow import PrintWindowCaptureBackend
+from typing import TYPE_CHECKING, Any, Callable
+
+if TYPE_CHECKING:
+    from ..ocr_backend_interface import CaptureBackend
+
+from ..ocr_runtime_types import (
+    _CAPTURE_BACKEND_AUTO,
+    _CAPTURE_BACKEND_DXCAM,
+    _CAPTURE_BACKEND_IMAGEGRAB,
+    _CAPTURE_BACKEND_MSS,
+    _CAPTURE_BACKEND_PRINTWINDOW,
+    _CAPTURE_BACKEND_PYAUTOGUI,
+    _CAPTURE_BACKEND_SMART,
+    DetectedGameWindow,
+    OcrCaptureProfile,
+)
+from ._helpers import (
+    _target_screen_capture_rect,
+)
 from .dxcam import DxcamCaptureBackend
+from .mss import MssCaptureBackend
+from .printwindow import PrintWindowCaptureBackend
+from .pyautogui import PyAutoGuiCaptureBackend
+
+
 def _rects_intersect(left: tuple[int, int, int, int], right: tuple[int, int, int, int]) -> bool:
     return max(left[0], right[0]) < min(left[2], right[2]) and max(
         left[1], right[1]
@@ -286,11 +304,6 @@ class Win32CaptureBackend:
             backend
             for backend in self._backends
             if str(getattr(backend, "kind", "")) == "electron"
-        ]
-        pixel_backends = [
-            backend
-            for backend in self._backends
-            if str(getattr(backend, "kind", "")) not in {"electron", _CAPTURE_BACKEND_PRINTWINDOW}
         ]
         if self.selection == _CAPTURE_BACKEND_PRINTWINDOW:
             if not (

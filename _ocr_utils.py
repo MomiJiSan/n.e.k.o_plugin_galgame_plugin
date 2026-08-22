@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from typing import Any, Iterable
 
-
 _RAW_OCR_TEXT_LIMIT = 20
 _RAW_OCR_LINE_MAX_CHARS = 120
 _DIALOGUE_COLON_RE = re.compile(r"^[^:：]{1,40}[:：]\s*.+\S$")

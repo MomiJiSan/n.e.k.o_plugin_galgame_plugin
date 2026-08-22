@@ -23,7 +23,7 @@ from .models import (
     READER_MODES,
     json_copy,
 )
-from .ocr_reader import utc_now_iso
+from .ocr_runtime_types import utc_now_iso
 
 
 def _normalize_ocr_trigger_mode(value: str | None) -> str:

@@ -4,22 +4,29 @@ import sys
 import types as _types
 from typing import Any
 
-from .models import DATA_SOURCE_MEMORY_READER, DATA_SOURCE_OCR_READER, SharedStatePayload
+from ._choice_resolver import VIRTUAL_MOUSE_DIALOGUE_CANDIDATES as VIRTUAL_MOUSE_DIALOGUE_CANDIDATES
+from ._choice_resolver import (
+    _choose_bounds,
+    _choose_index,
+    _looks_like_system_menu,
+    _recover_should_press_escape,
+    _resolve_choice_bounds_click_target,
+    _resolve_virtual_mouse_dialogue_target,
+    _snapshot_has_visible_choices,
+)
+from ._input_primitives import (
+    _click,
+    _client_screen_rect,
+    _input_safety_policy_block_reason,
+    _tap_key,
+)
+from ._input_primitives import (
+    _is_current_process_elevated as _is_current_process_elevated,
+)
+from ._input_primitives import (
+    _is_process_elevated as _is_process_elevated,
+)
 from ._win32_input_types import (
-    INPUT_KEYBOARD,
-    INPUT_MOUSE,
-    KEYEVENTF_EXTENDEDKEY,
-    KEYEVENTF_KEYUP,
-    KEYEVENTF_SCANCODE,
-    MAPVK_VK_TO_VSC,
-    MOUSEEVENTF_ABSOLUTE,
-    MOUSEEVENTF_LEFTDOWN,
-    MOUSEEVENTF_LEFTUP,
-    MOUSEEVENTF_MOVE,
-    PROCESS_QUERY_LIMITED_INFORMATION,
-    SW_RESTORE,
-    TOKEN_QUERY,
-    TokenElevation,
     VK_DOWN,
     VK_ESCAPE,
     VK_RETURN,
@@ -27,57 +34,14 @@ from ._win32_input_types import (
     VK_UP,
 )
 from ._window_manager import (
-    INPUT,
-    INPUT_UNION,
-    KEYBDINPUT,
-    MOUSEINPUT,
-    RECT,
-    TOKEN_ELEVATION,
-    _LAST_FOCUS_WINDOW_DIAGNOSTIC,
-    _LAST_FOCUS_WINDOW_DIAGNOSTIC_LOCK,
-    _LOGGER,
-    _WAIT_EVENT,
     _find_window_for_pid,
     _focus_window,
-    _foreground_matches_target_window,
     _get_last_focus_window_diagnostic,
-    _is_current_process_elevated,
-    _is_process_elevated,
-    _root_window_handle,
     _runtime_target,
     _set_last_focus_window_diagnostic,
-    _wait_seconds,
-    _warn_input_exception,
-    _window_process_id,
     _window_text,
 )
-from ._input_primitives import (
-    INPUT_SAFETY_DENY_MARKERS,
-    VIRTUAL_MOUSE_FORBIDDEN_ZONES,
-    _click,
-    _client_screen_rect,
-    _coerce_rect,
-    _coerce_source_size,
-    _input_safety_policy_block_reason,
-    _matching_input_safety_deny_marker,
-    _rect_payload,
-    _relative_point_forbidden_zone,
-    _tap_key,
-)
-from ._choice_resolver import (
-    SYSTEM_MENU_MARKERS,
-    VIRTUAL_MOUSE_DIALOGUE_CANDIDATES,
-    _choose_bounds,
-    _choose_choice,
-    _choose_index,
-    _looks_like_system_menu,
-    _recover_should_press_escape,
-    _resolve_choice_bounds_click_target,
-    _resolve_virtual_mouse_dialogue_target,
-    _snapshot_has_visible_choices,
-    _snapshot_screen_type,
-    _snapshot_text,
-)
+from .models import SharedStatePayload
 
 # Pre-split, all symbols below lived in this one module. After the split, tests
 # that monkeypatch ``local_input_actuator.<name>`` (or assign directly) must keep

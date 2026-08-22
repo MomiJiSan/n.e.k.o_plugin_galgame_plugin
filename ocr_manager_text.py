@@ -1,101 +1,47 @@
 from __future__ import annotations
 
-import asyncio
-import base64
-from concurrent.futures import Future, ThreadPoolExecutor
-import ctypes
-from datetime import datetime, timezone
-import hashlib
-import io
-import json
-import logging
 import math
-import os
-import re
-import shutil
-import sys
-import tempfile
-import threading
 import time
-from collections import deque
-from dataclasses import dataclass, field, replace
-from functools import wraps
-from pathlib import Path
-from typing import Any, Callable, ClassVar, Iterable, Protocol
-from uuid import uuid4
+from dataclasses import dataclass, field
+from dataclasses import replace as replace
+from typing import Any, Callable, Iterable
 
-from .models import (
-    ADVANCE_SPEED_FAST,
-    ADVANCE_SPEED_MEDIUM,
-    ADVANCE_SPEED_SLOW,
-    ADVANCE_SPEEDS,
-    DATA_SOURCE_OCR_READER,
-    DEFAULT_OCR_CAPTURE_BOTTOM_INSET_RATIO,
-    DEFAULT_OCR_CAPTURE_LEFT_INSET_RATIO,
-    DEFAULT_OCR_CAPTURE_RIGHT_INSET_RATIO,
-    DEFAULT_OCR_CAPTURE_TOP_RATIO,
-    GalgameConfig,
-    MENU_PREFIX_RE as _MENU_PREFIX_RE,
-    OCR_CAPTURE_PROFILE_STAGE_CONFIG,
-    OCR_CAPTURE_PROFILE_STAGE_GALLERY,
-    OCR_CAPTURE_PROFILE_STAGE_GAME_OVER,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_BUCKET_ASPECT_NEAREST,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_BUCKET_EXACT,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_BUILTIN_PRESET,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_CONFIG_DEFAULT,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_PROCESS_FALLBACK,
-    OCR_CAPTURE_PROFILE_RATIO_KEYS,
-    OCR_CAPTURE_PROFILE_STAGE_DEFAULT,
-    OCR_CAPTURE_PROFILE_STAGE_DIALOGUE,
-    OCR_CAPTURE_PROFILE_STAGE_MINIGAME,
-    OCR_CAPTURE_PROFILE_STAGE_MENU,
-    OCR_CAPTURE_PROFILE_STAGE_SAVE_LOAD,
-    OCR_CAPTURE_PROFILE_STAGE_TITLE,
-    OCR_CAPTURE_PROFILE_STAGE_TRANSITION,
-    OCR_CAPTURE_PROFILE_WINDOW_BUCKETS_KEY,
-    OCR_TRIGGER_MODE_AFTER_ADVANCE,
-    READER_MODE_AUTO,
-    READER_MODE_MEMORY,
-    build_ocr_capture_profile_bucket_key,
-    compute_ocr_window_aspect_ratio,
-    json_copy,
-    sanitize_screen_ui_elements,
-    parse_ocr_capture_profile_bucket_key,
+from .aihong_state import (
+    AIHONG_CHOICES_REGION_PRESET as _AIHONG_CHOICES_REGION_PRESET,
 )
-from .ocr_chrome_noise import (
-    looks_like_temperature_status_line as _looks_like_temperature_status_line,
-    looks_like_window_title_line as _looks_like_window_title_line,
+from .aihong_state import (
+    coerce_aihong_menu_choices as _coerce_aihong_menu_choices,
+)
+from .aihong_state import (
+    looks_like_aihong_menu_status_only_text as _looks_like_aihong_menu_status_only_text,
 )
 from .dialogue_library import (
     DialogueLibraryMatch as _DialogueLibraryMatch,
+)
+from .dialogue_library import (
     match_dialogue_library_for_target as _match_dialogue_library_for_target,
 )
-from .aihong_state import (
-    AIHONG_CHOICES_REGION_PRESET as _AIHONG_CHOICES_REGION_PRESET,
-    AIHONG_DIALOGUE_CAPTURE_PROFILE_PRESET as _AIHONG_DIALOGUE_CAPTURE_PROFILE_PRESET,
-    AIHONG_DIALOGUE_STAGE as _AIHONG_DIALOGUE_STAGE,
-    AIHONG_MENU_CAPTURE_PROFILE_PRESET as _AIHONG_MENU_CAPTURE_PROFILE_PRESET,
-    AIHONG_MENU_MAX_LINES as _AIHONG_MENU_MAX_LINES,
-    AIHONG_MENU_MAX_SIGNIFICANT_CHARS as _AIHONG_MENU_MAX_SIGNIFICANT_CHARS,
-    AIHONG_MENU_STAGE as _AIHONG_MENU_STAGE,
-    coerce_aihong_menu_choices as _coerce_aihong_menu_choices,
-    levenshtein_distance as _levenshtein_distance,
-    looks_like_aihong_menu_status_only_text as _looks_like_aihong_menu_status_only_text,
-    matches_aihong_target as _matches_aihong_target_info,
-    normalize_aihong_choice_box_text as _normalize_aihong_choice_box_text,
-)
-from plugin.plugins._shared.rapidocr.rapidocr_support import (
-    inspect_rapidocr_installation,
-    load_rapidocr_runtime,
+from .models import (
+    ADVANCE_SPEED_FAST,
+    ADVANCE_SPEED_SLOW,
+    OCR_CAPTURE_PROFILE_STAGE_CONFIG,
+    OCR_CAPTURE_PROFILE_STAGE_DEFAULT,
+    OCR_CAPTURE_PROFILE_STAGE_DIALOGUE,
+    OCR_CAPTURE_PROFILE_STAGE_GALLERY,
+    OCR_CAPTURE_PROFILE_STAGE_GAME_OVER,
+    OCR_CAPTURE_PROFILE_STAGE_MENU,
+    OCR_CAPTURE_PROFILE_STAGE_MINIGAME,
+    OCR_CAPTURE_PROFILE_STAGE_SAVE_LOAD,
+    OCR_CAPTURE_PROFILE_STAGE_TITLE,
+    OCR_CAPTURE_PROFILE_STAGE_TRANSITION,
+    json_copy,
 )
 from .reader import normalize_text
 from .screen_classifier import (
     ScreenClassification,
-    classify_screen_awareness_model,
     classify_screen_from_ocr,
     normalize_screen_type,
 )
-from .screen_classifier import analyze_screen_visual_features
 
 try:
     from PIL import Image as _PIL_IMAGE_MODULE
@@ -109,15 +55,43 @@ try:
 except ImportError:  # pragma: no cover
     psutil = None
 
-from .ocr_runtime_types import *
-from .ocr_backend_interface import *
-
-from .ocr_capture_backends import *
-
-from .ocr_rapidocr_backend import *
-from .ocr_input_hooks import *
-from .ocr_bridge_writer import *
 from . import ocr_reader as _ocr_reader_module
+from .ocr_bridge_writer import (
+    DetectedGameWindow,
+    OcrBackendDescriptor,
+    OcrExtractionResult,
+    OcrReaderBridgeWriter,
+    OcrTextBox,
+    SelectedOcrBackendPlan,
+    utc_now_iso,
+)
+from .ocr_rapidocr_backend import (
+    RapidOcrBackend,
+)
+from .ocr_runtime_types import (
+    _aihong_choice_boxes,
+    _aihong_choices_region_source_height,
+    _average_ocr_box_confidence,
+    _canonical_choice_candidate_text,
+    _clean_ocr_dialogue_text,
+    _coerce_choice_lines,
+    _drop_ocr_chrome_noise_lines,
+    _extraction_choice_bounds_metadata,
+    _filter_boxes_to_region,
+    _fix_ocr_punctuation_confusion,
+    _looks_like_game_overlay_normalized_text,
+    _looks_like_noise_normalized_text,
+    _looks_like_ocr_dialogue_normalized_text,
+    _looks_like_self_ui_text,
+    _MenuConsumeResult,
+    _normalize_window_title,
+    _ocr_stability_key,
+    _ocr_stability_keys_match,
+    _prefer_ocr_stability_text,
+    _rapidocr_runtime_cache_key,
+    _StableOcrTextState,
+    _stripped_ocr_lines,
+)
 
 _DIALOGUE_RECONCILIATION_CONFIDENCE = 0.5
 _CNN_DIALOGUE_BOUNDARY_LABELS = {

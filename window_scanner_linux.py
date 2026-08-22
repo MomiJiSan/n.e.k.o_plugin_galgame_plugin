@@ -197,8 +197,8 @@ def _scan_windows_linux_wmctrl() -> list["DetectedGameWindow"]:
         try:
             window_id = int(parts[0], 16)
             pid = int(parts[2])
-            x = int(parts[3])
-            y = int(parts[4])
+            int(parts[3])
+            int(parts[4])
             w = int(parts[5])
             h = int(parts[6])
             title = parts[8]

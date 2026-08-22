@@ -9,7 +9,6 @@ from typing import Any, Iterable
 
 from .reader import normalize_text
 
-
 SENREN_BANKA_GAME_ID = "senren_banka"
 _DEFAULT_LIBRARY_DIR = Path(__file__).with_name("data") / "dialogue_libraries"
 _SENREN_BANKA_LIBRARY_FILE = "senren_banka.json"

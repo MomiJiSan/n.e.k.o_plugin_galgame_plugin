@@ -6,30 +6,24 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Iterable
 
-from .ocr_chrome_noise import (
-    TEMPERATURE_STATUS_BOTTOM_MIN_RATIO,
-    TEMPERATURE_STATUS_LEFT_MAX_RATIO,
-    WINDOW_TITLE_TOP_MAX_RATIO,
-    looks_like_temperature_status_line,
-    looks_like_window_title_line,
-)
+from ._layout import _normalized_bounds as _normalized_bounds
 from .models import (
     MENU_PREFIX_RE as _MENU_PREFIX_RE,
+)
+from .models import (
     OCR_CAPTURE_PROFILE_STAGE_CONFIG,
     OCR_CAPTURE_PROFILE_STAGE_DEFAULT,
     OCR_CAPTURE_PROFILE_STAGE_DIALOGUE,
     OCR_CAPTURE_PROFILE_STAGE_GALLERY,
     OCR_CAPTURE_PROFILE_STAGE_GAME_OVER,
-    OCR_CAPTURE_PROFILE_STAGE_MINIGAME,
     OCR_CAPTURE_PROFILE_STAGE_MENU,
+    OCR_CAPTURE_PROFILE_STAGE_MINIGAME,
     OCR_CAPTURE_PROFILE_STAGE_SAVE_LOAD,
     OCR_CAPTURE_PROFILE_STAGE_TITLE,
     OCR_CAPTURE_PROFILE_STAGE_TRANSITION,
     OCR_CAPTURE_PROFILE_STAGES,
     json_copy,
-    sanitize_screen_ui_elements,
 )
-
 
 try:
     from PIL import Image as _PIL_IMAGE_MODULE
@@ -38,6 +32,55 @@ try:
 except ImportError:  # pragma: no cover - optional in non-visual test environments.
     _PIL_RESAMPLING = None
 
+
+from ._layout import _layout_features
+from ._ocr_pipeline import (
+    _clean_line,
+    _coerce_ocr_regions,
+    _filter_chrome_noise_ui_elements,
+    _has_long_dialogue_line,
+    _keyword_hits,
+    _looks_like_backlog,
+    _looks_like_backlog_dialogue_list,
+    _looks_like_config,
+    _looks_like_dialogue,
+    _looks_like_gallery,
+    _looks_like_game_over,
+    _looks_like_minigame,
+    _looks_like_save_load,
+    _looks_like_title,
+    _merged_ocr_lines,
+    _merged_screen_ui_elements,
+    _normalize_for_match,
+    _ocr_lines,
+    _screen_ui_elements,
+)
+from ._ocr_utils import (
+    _bounded_debug_value,
+    _bounded_raw_text,
+    _confidence,
+    _dedupe_preserve_order,
+    _float,
+    _visible_len,
+)
+from ._stage_keywords import (
+    _BACK_KEYWORDS,
+    _BACKLOG_KEYWORDS,
+    _CONFIG_KEYWORDS,
+    _GALLERY_KEYWORDS,
+    _GAME_OVER_KEYWORDS,
+    _MINIGAME_KEYWORDS,
+    _SAVE_LOAD_KEYWORDS,
+    _TITLE_EXIT_KEYWORDS,
+    _TITLE_KEYWORDS,
+)
+from ._templates import (
+    _template_context_score,
+    _template_matches_context,
+    _template_region_hits,
+    _template_regions,
+    _template_string_list,
+)
 
 _RAW_OCR_TEXT_LIMIT = 20
 _RAW_OCR_LINE_MAX_CHARS = 120
@@ -60,58 +103,6 @@ _DEFAULT_MODEL_FEATURE_SCALES = {
     "horizontal_cluster_count": 10.0,
     "vertical_cluster_count": 10.0,
 }
-
-from ._stage_keywords import (
-    _BACK_KEYWORDS,
-    _BACKLOG_KEYWORDS,
-    _CONFIG_KEYWORDS,
-    _GALLERY_KEYWORDS,
-    _GAME_OVER_KEYWORDS,
-    _MINIGAME_KEYWORDS,
-    _SAVE_LOAD_KEYWORDS,
-    _TITLE_EXIT_KEYWORDS,
-    _TITLE_KEYWORDS,
-)
-from ._ocr_pipeline import (
-    SCREEN_UI_ELEMENT_LIMIT,
-    _clean_line,
-    _coerce_ocr_regions,
-    _filter_chrome_noise_ui_elements,
-    _has_long_dialogue_line,
-    _keyword_hits,
-    _looks_like_backlog,
-    _looks_like_backlog_dialogue_list,
-    _looks_like_config,
-    _looks_like_dialogue,
-    _looks_like_game_over,
-    _looks_like_gallery,
-    _looks_like_minigame,
-    _looks_like_save_load,
-    _looks_like_title,
-    _merged_ocr_lines,
-    _merged_screen_ui_elements,
-    _normalize_for_match,
-    _ocr_lines,
-    _screen_ui_elements,
-)
-from ._layout import _layout_features, _normalized_bounds
-from ._ocr_utils import (
-    _bounded_debug_value,
-    _bounded_raw_text,
-    _confidence,
-    _dedupe_preserve_order,
-    _float,
-    _visible_len,
-)
-from ._templates import (
-    _template_context_score,
-    _template_matches_context,
-    _template_region_hits,
-    _template_regions,
-    _template_string_list,
-)
-
-
 
 
 @dataclass(slots=True)

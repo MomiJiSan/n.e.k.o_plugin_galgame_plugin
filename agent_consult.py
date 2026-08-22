@@ -1,6 +1,18 @@
 from __future__ import annotations
 
-from .agent_shared import *  # noqa: F401,F403
+from .agent_shared import (
+    MAX_CAT_OPINIONS,
+    Any,
+    ConsultInputs,
+    asyncio,
+    build_consult_prompt,
+    decide_consultation,
+    inject_cat_opinion,
+    json_copy,
+    render_cat_opinions_for_strategy,
+    summarize_character_voice,
+    time,
+)
 
 
 class AgentConsultMixin:

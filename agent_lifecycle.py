@@ -1,8 +1,23 @@
 from __future__ import annotations
 
-from .agent_shared import *  # noqa: F401,F403
 from .agent_message_router import AgentMessageRouter
 from .agent_scene_tracker import AgentSceneTracker
+from .agent_shared import (
+    AGENT_STATUS_STANDBY,
+    DATA_SOURCE_BRIDGE_SDK,
+    DATA_SOURCE_MEMORY_READER,
+    DATA_SOURCE_OCR_READER,
+    Any,
+    Callable,
+    GalgameLLMConfig,
+    HostAgentAdapter,
+    PushComposer,
+    asyncio,
+    logging,
+    perform_local_input_actuation,
+    re,
+    time,
+)
 
 
 class AgentLifecycleMixin:

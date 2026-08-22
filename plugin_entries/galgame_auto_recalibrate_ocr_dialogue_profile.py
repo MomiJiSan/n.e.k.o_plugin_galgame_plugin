@@ -1,5 +1,15 @@
 from __future__ import annotations
-from ._common import *  # noqa: F401, F403
+
+from ._common import (
+    OCR_CAPTURE_PROFILE_SAVE_SCOPE_WINDOW_BUCKET,
+    OCR_CAPTURE_PROFILE_STAGE_DIALOGUE,
+    Err,
+    Ok,
+    SdkError,
+    asyncio,
+    plugin_entry,
+    tr,
+)
 
 
 class _GalgameAutoRecalibrateOcrDialogueProfileMixin:

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 VK_RETURN = 0x0D
 VK_ESCAPE = 0x1B
 VK_SPACE = 0x20

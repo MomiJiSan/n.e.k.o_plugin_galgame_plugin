@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import copy
 import calendar
+import copy
 import json
 import logging
 import math
@@ -17,25 +17,42 @@ try:
 except ImportError:  # pragma: no cover
     psutil = None
 
+from plugin.plugins._shared.rapidocr.rapidocr_support import (
+    DEFAULT_RAPIDOCR_ENGINE_TYPE,
+    DEFAULT_RAPIDOCR_LANG_TYPE,
+    DEFAULT_RAPIDOCR_MODEL_TYPE,
+    DEFAULT_RAPIDOCR_OCR_VERSION,
+    inspect_rapidocr_installation,
+    resolve_rapidocr_model_cache_dir,
+)
+
+from ..context_builder.builder import (
+    _looks_like_game_dialogue_context_line,
+    _looks_like_ocr_overlay_text,
+)
+from ..dependency_status import (
+    infer_inspection_failed_dependencies,
+    infer_missing_dependencies,
+)
+from ..dialogue_library import built_in_dialogue_library_status
+from ..dxcam_support import inspect_dxcam_installation
 from ..models import (
+    DATA_SOURCE_BRIDGE_SDK,
+    DATA_SOURCE_MEMORY_READER,
+    DATA_SOURCE_OCR_READER,
     DEFAULT_OCR_CAPTURE_BOTTOM_INSET_RATIO,
     DEFAULT_OCR_CAPTURE_LEFT_INSET_RATIO,
     DEFAULT_OCR_CAPTURE_RIGHT_INSET_RATIO,
     DEFAULT_OCR_CAPTURE_TOP_RATIO,
     DEFAULT_VISION_CLASSIFIER_MODEL_DIR,
-    DATA_SOURCE_BRIDGE_SDK,
-    DATA_SOURCE_MEMORY_READER,
-    DATA_SOURCE_OCR_READER,
-    GalgameConfig,
-    GalgameLLMConfig,
     MODE_CHOICE_ADVISOR,
     MODE_COMPANION,
-    MODES,
     MODE_SILENT,
+    MODES,
     OCR_CAPTURE_PROFILE_STAGE_DEFAULT,
     OCR_CAPTURE_PROFILE_STAGES,
-    OCR_TRIGGER_MODE_INTERVAL,
     OCR_TRIGGER_MODE_AFTER_ADVANCE,
+    OCR_TRIGGER_MODE_INTERVAL,
     OCR_TRIGGER_MODES,
     READER_MODE_AUTO,
     READER_MODE_MEMORY,
@@ -46,6 +63,8 @@ from ..models import (
     STATE_ERROR,
     STATE_IDLE,
     STATE_STALE,
+    GalgameConfig,
+    GalgameLLMConfig,
     SessionCandidate,
     json_copy,
     make_error,
@@ -55,26 +74,8 @@ from ..models import (
     sanitize_screen_ui_elements,
     sanitize_snapshot_state,
 )
-from ..dependency_status import (
-    infer_inspection_failed_dependencies,
-    infer_missing_dependencies,
-)
-from ..context_builder.builder import (
-    _looks_like_game_dialogue_context_line,
-    _looks_like_ocr_overlay_text,
-)
-from ..dialogue_library import built_in_dialogue_library_status
-from ..dxcam_support import inspect_dxcam_installation
 from ..ocr_text_normalize import _normalize_window_title
 from ..reader import expand_bridge_root, normalize_text, read_session_json
-from plugin.plugins._shared.rapidocr.rapidocr_support import (
-    DEFAULT_RAPIDOCR_ENGINE_TYPE,
-    DEFAULT_RAPIDOCR_LANG_TYPE,
-    DEFAULT_RAPIDOCR_MODEL_TYPE,
-    DEFAULT_RAPIDOCR_OCR_VERSION,
-    inspect_rapidocr_installation,
-    resolve_rapidocr_model_cache_dir,
-)
 from ..textractor_support import (
     _BAIDU_YUN_TEXTTRACTOR_CODE,
     _BAIDU_YUN_TEXTTRACTOR_URL,
@@ -1520,7 +1521,6 @@ def build_primary_diagnosis(local_state: dict[str, Any]) -> dict[str, Any]:
     last_exclude_reason = _status_text(runtime_obj.get("last_exclude_reason"))
     last_capture_error = _status_text(runtime_obj.get("last_capture_error"))
     last_rejected_reason = _status_text(runtime_obj.get("last_rejected_ocr_reason"))
-    last_rejected_text = _status_text(runtime_obj.get("last_rejected_ocr_text"))
     last_rejected_ts = _utc_iso_timestamp(runtime_obj.get("last_rejected_ocr_at"))
     last_stable_line = runtime_obj.get("last_stable_line")
     last_stable_line_obj = last_stable_line if isinstance(last_stable_line, dict) else {}

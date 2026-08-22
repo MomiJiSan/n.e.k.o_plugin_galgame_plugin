@@ -29,7 +29,6 @@ from ._window_manager import (
     _wait_seconds,
 )
 
-
 INPUT_SAFETY_DENY_MARKERS = (
     "anti-cheat",
     "anticheat",

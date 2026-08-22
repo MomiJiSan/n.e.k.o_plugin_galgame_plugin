@@ -10,14 +10,13 @@ import logging
 import os
 import re
 import tempfile
+import unicodedata
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-import unicodedata
 
 from .context_tokens import count_tokens_heuristic
-
 
 REQUIRED_FIELDS: frozenset[str] = frozenset({"identity", "character_voice"})
 OPTIONAL_FIELDS: frozenset[str] = frozenset(

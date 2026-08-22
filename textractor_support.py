@@ -14,8 +14,8 @@ from typing import Any, Awaitable, Callable
 from urllib.parse import urlparse
 
 import httpx
-
 from plugin.server.routes._install_task_store import update_install_task_state
+
 from .memory_reader import (
     TEXTRACTOR_EXECUTABLE,
     is_windows_platform,

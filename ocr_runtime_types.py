@@ -1,87 +1,34 @@
 from __future__ import annotations
 
-import asyncio
-import base64
-from concurrent.futures import Future, ThreadPoolExecutor
-import ctypes
-from datetime import datetime, timezone
 import hashlib
-import io
-import json
 import logging
-import os
 import re
-import shutil
-import sys
-import tempfile
 import threading
 import time
-from collections import deque
-from dataclasses import dataclass, field, replace
-from functools import wraps
-from pathlib import Path
-from typing import Any, Callable, ClassVar, Iterable, Protocol
-from uuid import uuid4
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, ClassVar
 
+if TYPE_CHECKING:
+    from .ocr_backend_interface import OcrBackend
+
+from .aihong_state import (
+    levenshtein_distance as _levenshtein_distance,
+)
+from .aihong_state import (
+    normalize_aihong_choice_box_text as _normalize_aihong_choice_box_text,
+)
 from .models import (
-    ADVANCE_SPEED_FAST,
-    ADVANCE_SPEED_MEDIUM,
-    ADVANCE_SPEED_SLOW,
-    ADVANCE_SPEEDS,
-    DATA_SOURCE_OCR_READER,
-    DEFAULT_OCR_CAPTURE_BOTTOM_INSET_RATIO,
-    DEFAULT_OCR_CAPTURE_LEFT_INSET_RATIO,
-    DEFAULT_OCR_CAPTURE_RIGHT_INSET_RATIO,
-    DEFAULT_OCR_CAPTURE_TOP_RATIO,
-    GalgameConfig,
-    MENU_PREFIX_RE as _MENU_PREFIX_RE,
     OCR_CAPTURE_PROFILE_STAGE_CONFIG,
-    OCR_CAPTURE_PROFILE_STAGE_GALLERY,
-    OCR_CAPTURE_PROFILE_STAGE_GAME_OVER,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_BUCKET_ASPECT_NEAREST,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_BUCKET_EXACT,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_BUILTIN_PRESET,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_CONFIG_DEFAULT,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_PROCESS_FALLBACK,
-    OCR_CAPTURE_PROFILE_RATIO_KEYS,
     OCR_CAPTURE_PROFILE_STAGE_DEFAULT,
     OCR_CAPTURE_PROFILE_STAGE_DIALOGUE,
-    OCR_CAPTURE_PROFILE_STAGE_MINIGAME,
+    OCR_CAPTURE_PROFILE_STAGE_GALLERY,
+    OCR_CAPTURE_PROFILE_STAGE_GAME_OVER,
     OCR_CAPTURE_PROFILE_STAGE_MENU,
+    OCR_CAPTURE_PROFILE_STAGE_MINIGAME,
     OCR_CAPTURE_PROFILE_STAGE_SAVE_LOAD,
     OCR_CAPTURE_PROFILE_STAGE_TITLE,
     OCR_CAPTURE_PROFILE_STAGE_TRANSITION,
-    OCR_CAPTURE_PROFILE_WINDOW_BUCKETS_KEY,
-    OCR_TRIGGER_MODE_AFTER_ADVANCE,
-    READER_MODE_AUTO,
-    READER_MODE_MEMORY,
-    build_ocr_capture_profile_bucket_key,
     compute_ocr_window_aspect_ratio,
-    json_copy,
-    sanitize_screen_ui_elements,
-    parse_ocr_capture_profile_bucket_key,
-)
-from .ocr_chrome_noise import (
-    looks_like_temperature_status_line as _looks_like_temperature_status_line,
-    looks_like_window_title_line as _looks_like_window_title_line,
-)
-from .aihong_state import (
-    AIHONG_CHOICES_REGION_PRESET as _AIHONG_CHOICES_REGION_PRESET,
-    AIHONG_DIALOGUE_CAPTURE_PROFILE_PRESET as _AIHONG_DIALOGUE_CAPTURE_PROFILE_PRESET,
-    AIHONG_DIALOGUE_STAGE as _AIHONG_DIALOGUE_STAGE,
-    AIHONG_MENU_CAPTURE_PROFILE_PRESET as _AIHONG_MENU_CAPTURE_PROFILE_PRESET,
-    AIHONG_MENU_MAX_LINES as _AIHONG_MENU_MAX_LINES,
-    AIHONG_MENU_MAX_SIGNIFICANT_CHARS as _AIHONG_MENU_MAX_SIGNIFICANT_CHARS,
-    AIHONG_MENU_STAGE as _AIHONG_MENU_STAGE,
-    coerce_aihong_menu_choices as _coerce_aihong_menu_choices,
-    levenshtein_distance as _levenshtein_distance,
-    looks_like_aihong_menu_status_only_text as _looks_like_aihong_menu_status_only_text,
-    matches_aihong_target as _matches_aihong_target_info,
-    normalize_aihong_choice_box_text as _normalize_aihong_choice_box_text,
-)
-from plugin.plugins._shared.rapidocr.rapidocr_support import (
-    inspect_rapidocr_installation,
-    load_rapidocr_runtime,
 )
 
 try:
@@ -90,13 +37,6 @@ except Exception:  # pragma: no cover - plugin may run without the framework set
     _PLUGIN_SHUTDOWN_TIMEOUT = 1.5
 
 from .reader import normalize_text
-from .screen_classifier import (
-    ScreenClassification,
-    classify_screen_awareness_model,
-    classify_screen_from_ocr,
-    normalize_screen_type,
-)
-from .screen_classifier import analyze_screen_visual_features
 
 try:
     from PIL import Image as _PIL_IMAGE_MODULE
@@ -110,9 +50,91 @@ try:
 except ImportError:  # pragma: no cover
     psutil = None
 
-from .ocr_text_normalize import *
-from .ocr_capture_profile import *
-
+from .ocr_capture_profile import (
+    OcrCaptureProfile,
+    ParsedOcrCaptureBucket,
+    ParsedOcrCaptureProcessConfig,
+    ResolvedOcrCaptureSelection,
+    _builtin_capture_profile_for_target,
+    _builtin_capture_profile_for_target_stage,
+    _lookup_capture_profile,
+    _matches_aihong_target,
+    _parse_configured_capture_profiles,
+    _resolve_stage_capture_profile,
+    _uses_manual_capture_profile,
+)
+from .ocr_text_normalize import (
+    _ASCII_TOKEN_RE,
+    _AUTO_TARGET_DENY_PROCESS_NAMES,
+    _CJK_CHAR_RE,
+    _DIALOGUE_LINE_MARKERS,
+    _ENGLISH_GAME_OVERLAY_WORDS,
+    _GAME_OVERLAY_TEXT_GUARD_SUBSTRINGS,
+    _HANGUL_RE,
+    _HELPER_CLASS_NAMES,
+    _HIRAGANA_RE,
+    _JA_MARKER_WORDS,
+    _KANA_BUD_RE,
+    _KANA_CHAR_RE,
+    _KATAKANA_RE,
+    _NARRATION_PAREN_RE,
+    _NARRATION_QUOTE_RE,
+    _NON_ENGLISH_GAME_OVERLAY_SUBSTRINGS,
+    _OCR_DIALOGUE_STRONG_PUNCTUATION_RE,
+    _OCR_DIALOGUE_WEAK_PUNCTUATION_RE,
+    _OCR_STABILITY_IGNORED_CHARS_RE,
+    _OCR_TRAILING_GARBAGE_AFTER_BRACKET_RE,
+    _OCR_TRAILING_GARBAGE_AFTER_DASH_RE,
+    _OCR_TRAILING_GARBAGE_AFTER_SENTENCE_RE,
+    _OCR_TRAILING_ORPHAN_AFTER_SENTENCE_RE,
+    _OVERLAY_PROCESS_NAME_SUBSTRINGS,
+    _OVERLAY_WINDOW_TITLE_SUBSTRINGS,
+    _PUNCTUATION_CONFUSION_FIXES,
+    _SELF_UI_GUARD_SUBSTRINGS,
+    _SELF_WINDOW_PATH_SUBSTRINGS,
+    _SELF_WINDOW_TITLE_SUBSTRINGS,
+    _SPEAKER_BRACKET_RE,
+    _SPEAKER_COLON_RE,
+    _SPEAKER_PAREN_PREFIX_RE,
+    _SPEAKER_PAREN_SUFFIX_RE,
+    _SPEAKER_QUOTE_RE,
+    _WINDOW_SPACE_RE,
+    _ZH_MARKER_WORDS,
+    _average_ocr_box_confidence,
+    _bounded_confidence_or_zero,
+    _canonical_choice_candidate_text,
+    _classify_cjk_text,
+    _clean_ocr_dialogue_text,
+    _coerce_choice_lines,
+    _coerce_plain_choice_lines,
+    _coerce_prefixed_choice_lines,
+    _drop_ocr_chrome_noise_lines,
+    _fix_ocr_punctuation_confusion,
+    _join_ocr_segments,
+    _looks_like_dialogue_line,
+    _looks_like_english_overlay_label,
+    _looks_like_game_overlay_normalized_text,
+    _looks_like_game_overlay_text,
+    _looks_like_noise_normalized_text,
+    _looks_like_noise_ocr_text,
+    _looks_like_non_english_overlay_label,
+    _looks_like_ocr_dialogue_normalized_text,
+    _looks_like_ocr_dialogue_text,
+    _looks_like_self_ui_text,
+    _looks_like_self_window_path,
+    _looks_like_self_window_title,
+    _normalize_window_title,
+    _ocr_score_weight,
+    _ocr_stability_key,
+    _ocr_stability_keys_match,
+    _OcrLangDetector,
+    _prefer_ocr_stability_text,
+    _score_ocr_text,
+    _should_insert_ascii_space,
+    _significant_char_count,
+    _stripped_ocr_lines,
+    _weighted_ocr_score,
+)
 
 __all__ = [
     "DetectedGameWindow",

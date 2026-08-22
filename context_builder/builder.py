@@ -14,8 +14,8 @@ from ..models import (
     sanitize_choice,
     sanitize_snapshot_state,
 )
-from ..reader import normalize_text
 from ..ocr_text_normalize import _looks_like_self_ui_text
+from ..reader import normalize_text
 
 _OCR_OVERLAY_TEXT_GUARD_SUBSTRINGS = (
     ".agent",

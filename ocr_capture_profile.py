@@ -2,13 +2,24 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from .ocr_runtime_types import DetectedGameWindow
 
 from .aihong_state import (
     AIHONG_DIALOGUE_CAPTURE_PROFILE_PRESET as _AIHONG_DIALOGUE_CAPTURE_PROFILE_PRESET,
+)
+from .aihong_state import (
     AIHONG_DIALOGUE_STAGE as _AIHONG_DIALOGUE_STAGE,
+)
+from .aihong_state import (
     AIHONG_MENU_CAPTURE_PROFILE_PRESET as _AIHONG_MENU_CAPTURE_PROFILE_PRESET,
+)
+from .aihong_state import (
     AIHONG_MENU_STAGE as _AIHONG_MENU_STAGE,
+)
+from .aihong_state import (
     matches_aihong_target as _matches_aihong_target_info,
 )
 from .dialogue_library import matches_senren_banka_target
@@ -19,7 +30,6 @@ from .models import (
     DEFAULT_OCR_CAPTURE_TOP_RATIO,
     OCR_CAPTURE_PROFILE_MATCH_SOURCE_BUCKET_ASPECT_NEAREST,
     OCR_CAPTURE_PROFILE_MATCH_SOURCE_BUCKET_EXACT,
-    OCR_CAPTURE_PROFILE_MATCH_SOURCE_BUILTIN_PRESET,
     OCR_CAPTURE_PROFILE_MATCH_SOURCE_CONFIG_DEFAULT,
     OCR_CAPTURE_PROFILE_MATCH_SOURCE_PROCESS_FALLBACK,
     OCR_CAPTURE_PROFILE_RATIO_KEYS,

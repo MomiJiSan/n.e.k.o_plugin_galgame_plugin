@@ -1,13 +1,17 @@
 from __future__ import annotations
+
 import threading
 from typing import Any
-from ..ocr_runtime_types import DetectedGameWindow, OcrCaptureProfile, _CAPTURE_BACKEND_MSS
+
+from ..ocr_runtime_types import _CAPTURE_BACKEND_MSS, DetectedGameWindow, OcrCaptureProfile
 from ._helpers import (
     _crop_window_image,
     _require_foreground_screen_capture_target,
     _require_visible_capture_target,
     _target_screen_capture_rect,
 )
+
+
 class MssCaptureBackend:
     kind = _CAPTURE_BACKEND_MSS
 

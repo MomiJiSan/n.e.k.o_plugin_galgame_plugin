@@ -25,7 +25,6 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
-
 DEFAULT_MAX_LINES: int = 50
 DEFAULT_MAX_SCENES: int = 32
 

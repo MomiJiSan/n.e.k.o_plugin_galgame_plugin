@@ -9,6 +9,5 @@ avoids the false impression that everything here is "shared" with mixins.
 """
 from __future__ import annotations
 
-
 _OCR_BACKEND_SELECTIONS = {"auto", "rapidocr"}
 _OCR_CAPTURE_BACKEND_SELECTIONS = {"auto", "smart", "dxcam", "mss", "printwindow"}

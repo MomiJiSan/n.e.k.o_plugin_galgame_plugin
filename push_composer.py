@@ -28,7 +28,6 @@ from typing import Any
 
 from .context_tokens import count_tokens_heuristic
 
-
 try:  # pragma: no cover - import probe
     import tiktoken
 except ImportError:  # pragma: no cover - degraded path

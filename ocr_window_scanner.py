@@ -10,8 +10,20 @@ try:
 except ImportError:  # pragma: no cover
     psutil = None
 
-from .ocr_runtime_types import *
-from .ocr_capture_backends import *
+from .ocr_capture_backends import (
+    _run_with_thread_dpi_awareness,
+)
+from .ocr_runtime_types import (
+    _AUTO_TARGET_DENY_PROCESS_NAMES,
+    _HELPER_CLASS_NAMES,
+    _LOGGER,
+    _OVERLAY_PROCESS_NAME_SUBSTRINGS,
+    _OVERLAY_WINDOW_TITLE_SUBSTRINGS,
+    DetectedGameWindow,
+    _looks_like_self_window_path,
+    _looks_like_self_window_title,
+    _matches_aihong_target,
+)
 
 
 def _default_window_scanner() -> list[DetectedGameWindow]:

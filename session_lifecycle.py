@@ -6,7 +6,6 @@ from typing import AbstractSet, Any, Literal
 
 from .models import DATA_SOURCE_MEMORY_READER, DATA_SOURCE_OCR_READER
 
-
 SESSION_ORIGIN_CURRENT_RUN = "current_run"
 SESSION_ORIGIN_PREEXISTING = "preexisting"
 SessionOrigin = Literal["current_run", "preexisting"]

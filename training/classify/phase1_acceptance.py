@@ -8,7 +8,6 @@ import math
 import os
 import statistics
 import subprocess
-import sys
 import time
 import trace
 from collections import Counter, defaultdict
@@ -18,7 +17,6 @@ from typing import Any, Iterable
 
 import numpy as np
 from PIL import Image
-
 from plugin.plugins.galgame_plugin.core.vision.labels import (
     vision_label_to_screen_type,
 )
@@ -36,7 +34,6 @@ from plugin.plugins.galgame_plugin.screen_classifier import (
     analyze_screen_visual_features,
     classify_screen_awareness_model,
 )
-
 
 _LOGGER = logging.getLogger(__name__)
 DEFAULT_MODEL_DIR = "plugin/plugins/galgame_plugin/models/vision/screen_classifier"

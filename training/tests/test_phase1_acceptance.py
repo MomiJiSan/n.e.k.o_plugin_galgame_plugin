@@ -4,9 +4,8 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
-from PIL import Image
 import pytest
-
+from PIL import Image
 from plugin.plugins.galgame_plugin.core.vision.labels import vision_label_to_screen_type
 from plugin.plugins.galgame_plugin.training.classify import phase1_acceptance
 from plugin.plugins.galgame_plugin.training.classify.phase1_acceptance import (
