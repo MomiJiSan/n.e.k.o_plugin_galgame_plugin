@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 from typing import Any, TypeAlias
 
 MODE_SILENT = "silent"
@@ -41,9 +42,15 @@ DEFAULT_OCR_CAPTURE_LEFT_INSET_RATIO = 0.05
 DEFAULT_OCR_CAPTURE_RIGHT_INSET_RATIO = 0.05
 DEFAULT_OCR_CAPTURE_TOP_RATIO = 0.62
 DEFAULT_OCR_CAPTURE_BOTTOM_INSET_RATIO = 0.08
-DEFAULT_VISION_CLASSIFIER_MODEL_DIR = (
-    "plugin/plugins/galgame_plugin/models/vision/screen_classifier"
-)
+DEFAULT_VISION_CLASSIFIER_MODEL_DIR = "models/vision/screen_classifier"
+
+
+def resolve_vision_classifier_model_dir(raw_path: str = "") -> Path:
+    path = Path(raw_path or DEFAULT_VISION_CLASSIFIER_MODEL_DIR).expanduser()
+    if path.is_absolute():
+        return path.resolve()
+    plugin_root = Path(__file__).resolve().parents[1]
+    return (plugin_root / path).resolve()
 OCR_CAPTURE_PROFILE_RATIO_KEYS = (
     "left_inset_ratio",
     "right_inset_ratio",

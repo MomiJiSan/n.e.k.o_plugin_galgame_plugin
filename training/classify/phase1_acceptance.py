@@ -17,26 +17,28 @@ from typing import Any, Iterable
 
 import numpy as np
 from PIL import Image
-from plugin.plugins.galgame_plugin.core.vision.labels import (
+
+from ...core.vision.labels import (
     vision_label_to_screen_type,
 )
-from plugin.plugins.galgame_plugin.core.vision.preprocessing import (
+from ...core.vision.preprocessing import (
     IMAGENET_MEAN,
     IMAGENET_STD,
     softmax,
 )
-from plugin.plugins.galgame_plugin.models import OCR_CAPTURE_PROFILE_STAGE_DEFAULT
-from plugin.plugins.galgame_plugin.screen_awareness_training import (
+from ...models import OCR_CAPTURE_PROFILE_STAGE_DEFAULT
+from ...screen_awareness_training import (
     ScreenAwarenessTrainingSample,
     build_prototype_model,
 )
-from plugin.plugins.galgame_plugin.screen_classifier import (
+from ...screen_classifier import (
     analyze_screen_visual_features,
     classify_screen_awareness_model,
 )
 
 _LOGGER = logging.getLogger(__name__)
-DEFAULT_MODEL_DIR = "plugin/plugins/galgame_plugin/models/vision/screen_classifier"
+PLUGIN_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_MODEL_DIR = PLUGIN_ROOT / "models" / "vision" / "screen_classifier"
 
 
 @dataclass(slots=True)
@@ -533,17 +535,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     acceptance = subparsers.add_parser("acceptance")
     acceptance.add_argument("--repo", default=".")
-    acceptance.add_argument("--data-dir", default="plugin/plugins/galgame_plugin/training/data")
-    acceptance.add_argument("--model-path", default=f"{DEFAULT_MODEL_DIR}/v1_galgame.onnx")
-    acceptance.add_argument("--config-path", default=f"{DEFAULT_MODEL_DIR}/v1_config.json")
-    acceptance.add_argument("--output", default=f"{DEFAULT_MODEL_DIR}/phase1_acceptance_v1.json")
+    acceptance.add_argument("--data-dir", default=str(PLUGIN_ROOT / "training" / "data"))
+    acceptance.add_argument("--model-path", default=str(DEFAULT_MODEL_DIR / "v1_galgame.onnx"))
+    acceptance.add_argument("--config-path", default=str(DEFAULT_MODEL_DIR / "v1_config.json"))
+    acceptance.add_argument("--output", default=str(DEFAULT_MODEL_DIR / "phase1_acceptance_v1.json"))
     acceptance.add_argument("--ticks", type=int, default=1000)
     acceptance.add_argument("--splits", nargs="+", default=["val"])
     acceptance.add_argument("--latency-iterations", type=int, default=120)
 
     coverage = subparsers.add_parser("coverage")
     coverage.add_argument("--repo", default=".")
-    coverage.add_argument("--output", default=f"{DEFAULT_MODEL_DIR}/phase1_coverage_v1.json")
+    coverage.add_argument("--output", default=str(DEFAULT_MODEL_DIR / "phase1_coverage_v1.json"))
     coverage.add_argument(
         "--coverage-base-ref",
         default=os.environ.get("GALGAME_PHASE1_COVERAGE_BASE_REF", "origin/main"),
@@ -556,13 +558,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--coverage-source",
         nargs="+",
         default=[
-            "plugin/plugins/_shared/rapidocr/_runtime.py",
-            "plugin/plugins/galgame_plugin/ocr_capture_backends/_helpers.py",
-            "plugin/plugins/galgame_plugin/ocr_manager_capture.py",
-            "plugin/plugins/galgame_plugin/ocr_manager_runtime.py",
-            "plugin/plugins/galgame_plugin/ocr_reader.py",
-            "plugin/plugins/galgame_plugin/ocr_runtime_types.py",
-            "plugin/plugins/galgame_plugin/service/__init__.py",
+            "ocr_capture_backends/_helpers.py",
+            "ocr_manager_capture.py",
+            "ocr_manager_runtime.py",
+            "ocr_reader.py",
+            "ocr_runtime_types.py",
+            "service/__init__.py",
         ],
     )
     coverage.add_argument(
@@ -570,15 +571,10 @@ def build_parser() -> argparse.ArgumentParser:
         nargs="+",
         default=[
             "-q",
-            "plugin/tests/unit/plugins/test_galgame_rapidocr_support.py",
-            "plugin/tests/unit/plugins/test_galgame_ocr_reader.py::test_background_hash_excludes_bottom_dialogue_region",
-            "plugin/tests/unit/plugins/test_galgame_ocr_reader.py::test_ocr_capture_keeps_full_frame_for_vision_classifier",
-            "plugin/tests/unit/plugins/test_galgame_ocr_reader.py::test_ocr_reader_runtime_groups_fields_and_keeps_flat_compatibility",
-            "plugin/tests/unit/plugins/test_galgame_ocr_reader.py::test_ocr_reader_build_runtime_exposes_vision_classifier_status",
-            "plugin/tests/unit/plugins/test_galgame_ocr_reader.py::test_ocr_reader_logs_when_vision_classifier_loads",
-            "plugin/tests/unit/plugins/test_galgame_service.py::test_status_payload_exposes_vision_classifier_runtime",
+            "tests",
+            "training/tests",
             "--basetemp",
-            ".codex-tmp/pytest-phase1-coverage",
+            ".pytest-phase1-coverage",
         ],
     )
     return parser

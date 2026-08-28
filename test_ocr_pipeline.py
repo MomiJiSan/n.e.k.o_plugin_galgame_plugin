@@ -1,7 +1,7 @@
 """Standalone validation script for the OCR capture + recognition pipeline.
 
 Usage (from repo root with venv activated):
-    python -m plugin.plugins.galgame_plugin.test_ocr_pipeline
+    python -m plugins.galgame_plugin.test_ocr_pipeline
 
 This will:
 1. Scan for visible game-sized windows
@@ -19,14 +19,15 @@ import asyncio
 from pathlib import Path
 
 from plugin.plugins._shared.rapidocr.rapidocr_support import DEFAULT_RAPIDOCR_OCR_VERSION
-from plugin.plugins.galgame_plugin.models import (
+
+from .models import (
     DEFAULT_OCR_CAPTURE_BOTTOM_INSET_RATIO,
     DEFAULT_OCR_CAPTURE_LEFT_INSET_RATIO,
     DEFAULT_OCR_CAPTURE_RIGHT_INSET_RATIO,
     DEFAULT_OCR_CAPTURE_TOP_RATIO,
     GalgameConfig,
 )
-from plugin.plugins.galgame_plugin.ocr_reader import (
+from .ocr_reader import (
     OcrCaptureProfile,
     OcrReaderManager,
     RapidOcrBackend,

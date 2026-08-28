@@ -4,7 +4,8 @@ import json
 from pathlib import Path
 
 import numpy as np
-from plugin.plugins.galgame_plugin.training.shared.metrics import macro_f1, top1_accuracy
+
+from ..shared.metrics import macro_f1, top1_accuracy
 
 
 def write_eval_report(logits: np.ndarray, labels: np.ndarray, output_path: str | Path) -> dict[str, float]:

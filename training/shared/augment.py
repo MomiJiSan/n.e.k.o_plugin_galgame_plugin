@@ -5,7 +5,8 @@ from typing import Callable
 
 import numpy as np
 import torch
-from plugin.plugins.galgame_plugin.core.vision.preprocessing import IMAGENET_MEAN, IMAGENET_STD
+
+from ...core.vision.preprocessing import IMAGENET_MEAN, IMAGENET_STD
 
 _LOGGER = logging.getLogger(__name__)
 

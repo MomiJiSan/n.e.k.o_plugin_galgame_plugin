@@ -5,7 +5,7 @@ import pytest
 
 def test_export_onnx_uses_legacy_exporter_for_windows_console(monkeypatch, tmp_path) -> None:
     torch = pytest.importorskip("torch")
-    from plugin.plugins.galgame_plugin.training.classify.export_onnx import export_onnx
+    from market_plugins.galgame_plugin.training.classify.export_onnx import export_onnx
 
     class _FixedModel(torch.nn.Module):
         def forward(self, images):
@@ -32,7 +32,7 @@ def test_export_onnx_uses_legacy_exporter_for_windows_console(monkeypatch, tmp_p
 
 def test_export_onnx_rejects_num_class_mismatch(monkeypatch, tmp_path) -> None:
     torch = pytest.importorskip("torch")
-    from plugin.plugins.galgame_plugin.training.classify.export_onnx import export_onnx
+    from market_plugins.galgame_plugin.training.classify.export_onnx import export_onnx
 
     class _WrongClassCountModel(torch.nn.Module):
         def forward(self, images):
