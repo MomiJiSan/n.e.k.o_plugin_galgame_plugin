@@ -9,6 +9,7 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from market_plugins.galgame_plugin import capture_platform as galgame_capture_platform
 from market_plugins.galgame_plugin import local_input_actuator as local_input
 from market_plugins.galgame_plugin import ocr_reader as galgame_ocr_reader
 from market_plugins.galgame_plugin import (
@@ -51,6 +52,7 @@ from market_plugins.galgame_plugin.ocr_reader import (
 from market_plugins.galgame_plugin.reader import read_session_json
 from market_plugins.galgame_plugin.service import build_config
 from plugin.sdk.plugin import Err, Ok
+
 from tests.support.fake_clock import patch_module_clock
 from tests.support.ocr_flow import (
     _clear_bridge_root,
@@ -78,6 +80,11 @@ from tests.support.ocr_flow import (
 
 GalgameBridgePlugin = galgame_plugin_core.GalgamePlugin
 galgame_plugin_module = galgame_plugin_core
+
+
+def _force_windows_capture_platform(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(galgame_capture_platform, "is_windows", lambda: True)
+    monkeypatch.setattr(galgame_capture_platform, "is_linux", lambda: False)
 
 @pytest.mark.asyncio
 @pytest.mark.plugin_unit
@@ -2543,7 +2550,10 @@ def test_ocr_reader_capture_backend_config_is_sanitized(tmp_path: Path) -> None:
 
 
 @pytest.mark.plugin_unit
-def test_win32_capture_backend_selection_orders_dxcam_first_for_auto() -> None:
+def test_win32_capture_backend_selection_orders_dxcam_first_for_auto(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _force_windows_capture_platform(monkeypatch)
     # Default chain: dxcam → mss → pyautogui (PrintWindow dropped from default
     # fallback because it's a "render to DC" mechanism that often produces
     # stale frames on DirectX/Unity games and is slower than BitBlt-based
@@ -2573,7 +2583,10 @@ def test_win32_capture_backend_selection_orders_dxcam_first_for_auto() -> None:
 
 
 @pytest.mark.plugin_unit
-def test_win32_capture_backend_smart_uses_target_aware_order() -> None:
+def test_win32_capture_backend_smart_uses_target_aware_order(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _force_windows_capture_platform(monkeypatch)
     backend = galgame_ocr_reader.Win32CaptureBackend(selection="smart")
     foreground = DetectedGameWindow(
         hwnd=1,
@@ -2602,7 +2615,10 @@ def test_win32_capture_backend_smart_uses_target_aware_order() -> None:
 
 
 @pytest.mark.plugin_unit
-def test_win32_capture_backend_printwindow_strict_for_background_target() -> None:
+def test_win32_capture_backend_printwindow_strict_for_background_target(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _force_windows_capture_platform(monkeypatch)
     # Explicit `selection="printwindow"` should ONLY use PrintWindow on a
     # background/occluded target. Falling through to dxcam/mss/pyautogui
     # would silently OCR the occluding window (screen pixels, not target

@@ -4,6 +4,7 @@ from importlib import import_module
 from pathlib import Path
 
 from PIL import Image
+
 from tests.support.plugin_runtime_stubs import install_plugin_runtime_stubs
 
 install_plugin_runtime_stubs()

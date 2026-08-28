@@ -7,6 +7,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+
 from tests.migrated.test_galgame_ocr_reader import (
     OCR_CAPTURE_PROFILE_STAGE_DIALOGUE,
     OCR_CAPTURE_PROFILE_STAGE_MENU,

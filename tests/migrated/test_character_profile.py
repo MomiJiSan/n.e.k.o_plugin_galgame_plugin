@@ -12,6 +12,7 @@ from market_plugins.galgame_plugin.character_profile import (
     CharacterProfileManager,
 )
 from market_plugins.galgame_plugin.context_tokens import count_tokens_heuristic
+
 from tests.migrated._galgame_character_data import (
     CHARACTER_DATA_DIR,
     MURASAME_PROFILE,

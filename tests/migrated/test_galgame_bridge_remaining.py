@@ -6,6 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+
 from tests.support.agent_flow import (
     FakeHostAdapter,
     FakeLLMGateway,

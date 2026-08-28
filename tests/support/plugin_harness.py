@@ -4,6 +4,7 @@ import time
 from pathlib import Path
 
 from market_plugins.galgame_plugin.plugin_core import GalgameBridgePlugin
+
 from tests.support.bridge_fixtures import session_snapshot, session_state, write_session
 
 

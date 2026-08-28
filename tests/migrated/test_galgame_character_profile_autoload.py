@@ -6,6 +6,7 @@ from importlib import import_module
 from types import SimpleNamespace
 
 import pytest
+
 from tests.migrated._galgame_character_data import CHARACTER_DATA_DIR
 from tests.support.plugin_runtime_stubs import install_plugin_runtime_stubs
 

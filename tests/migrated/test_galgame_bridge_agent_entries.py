@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 from plugin.sdk.plugin import Ok
+
 from tests.support.plugin_harness import (
     FakeHostAdapter,
     FakeLLMGateway,

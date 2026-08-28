@@ -18,6 +18,7 @@ from market_plugins.galgame_plugin.service import (
     build_config,
     build_summarize_context,
 )
+
 from tests.support.scene_capsule import (
     SceneCapsulePlugin,
     _BlockingSummaryGateway,

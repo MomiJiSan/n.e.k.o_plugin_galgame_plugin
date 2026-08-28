@@ -75,6 +75,7 @@ from market_plugins.galgame_plugin.screen_classifier import (
     classify_screen_from_ocr,
 )
 from market_plugins.galgame_plugin.service import build_config
+
 from tests.support.fake_clock import patch_module_clock
 
 pytestmark = pytest.mark.plugin_unit
@@ -3634,6 +3635,7 @@ def test_galgame_printwindow_releases_window_dc_without_deleting_wrapped_hdc(
         galgame_printwindow_backend.ctypes,
         "windll",
         SimpleNamespace(user32=SimpleNamespace(PrintWindow=_print_window)),
+        raising=False,
     )
 
     with pytest.raises(RuntimeError, match="printwindow_failed_for_capture"):

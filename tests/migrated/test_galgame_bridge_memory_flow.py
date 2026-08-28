@@ -5,6 +5,7 @@ from importlib import import_module
 from pathlib import Path
 
 import pytest
+
 from tests.support.memory_flow import (
     _clear_bridge_root,
     _create_game_dir,
@@ -26,6 +27,7 @@ install_plugin_runtime_stubs()
 
 galgame_plugin_module = import_module("market_plugins.galgame_plugin.plugin_core")
 galgame_service = import_module("market_plugins.galgame_plugin.service")
+capture_platform_module = import_module("market_plugins.galgame_plugin.capture_platform")
 memory_reader_module = import_module("market_plugins.galgame_plugin.memory_reader")
 models_module = import_module("market_plugins.galgame_plugin.models")
 ocr_reader_module = import_module("market_plugins.galgame_plugin.ocr_reader")
@@ -43,6 +45,11 @@ OcrReaderBridgeWriter = ocr_reader_module.OcrReaderBridgeWriter
 OcrReaderManager = ocr_reader_module.OcrReaderManager
 build_config = galgame_service.build_config
 Ok = sdk_module.Ok
+
+
+def _force_windows_platform(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(capture_platform_module, "is_windows", lambda: True)
+    monkeypatch.setattr(capture_platform_module, "is_linux", lambda: False)
 
 @pytest.mark.plugin_unit
 def test_compute_memory_reader_game_id_avoids_windows_invalid_path_characters() -> None:
@@ -108,7 +115,7 @@ def test_build_config_explicit_memory_reader_enabled_overrides_platform_default(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setattr(galgame_service.sys, "platform", "win32")
+    _force_windows_platform(monkeypatch)
     cfg = build_config(
         {
             "galgame": {"bridge_root": str(tmp_path / "bridge")},
@@ -143,7 +150,7 @@ def test_build_config_explicit_ocr_reader_enabled_overrides_platform_default(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setattr(galgame_service.sys, "platform", "win32")
+    _force_windows_platform(monkeypatch)
     cfg = build_config(
         {
             "galgame": {"bridge_root": str(tmp_path / "bridge")},
