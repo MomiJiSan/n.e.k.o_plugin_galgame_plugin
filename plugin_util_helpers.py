@@ -17,7 +17,8 @@ def _log_plugin_noncritical(logger: Any, level: str, message: str, *args: Any) -
 
 
 def _package_public_attr(name: str, fallback: Any) -> Any:
-    package = sys.modules.get("plugin.plugins.galgame_plugin")
+    package_name = __package__ or ""
+    package = sys.modules.get(package_name)
     if package is None:
         return fallback
     return getattr(package, name, fallback)

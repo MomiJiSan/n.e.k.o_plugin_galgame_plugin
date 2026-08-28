@@ -13,7 +13,7 @@ keywords = [
     "台词",
     "选项",
 ]
-version = "1.0.0"
+version = "1.0.1"
 type = "plugin"
 entry = "plugin.plugins.galgame_plugin.plugin_core:GalgamePlugin"
 
@@ -81,7 +81,7 @@ llm_repeat_similarity_threshold = 0.85
 
 [vision]
 enabled = true
-model_dir = "plugin/plugins/galgame_plugin/models/vision/screen_classifier"
+model_dir = "models/vision/screen_classifier"
 device = "auto"
 cnn_skip_ocr_threshold = 0.75
 classifier_tick_interval = 1

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 from typing import Any
 
 from ..ocr_runtime_types import _CAPTURE_BACKEND_PYAUTOGUI, DetectedGameWindow, OcrCaptureProfile
@@ -77,6 +78,9 @@ class PyAutoGuiCaptureBackend:
         # RuntimeError. Catch broadly so backend probing degrades cleanly to
         # "unavailable" instead of bubbling up and aborting capture preflight.
         try:
+            importlib.import_module("pyautogui")
+            importlib.import_module("PIL.ImageGrab")
+
             return True
         except Exception as exc:
             self._availability_error = str(exc)

@@ -6,16 +6,18 @@ import logging
 from pathlib import Path
 
 import torch
-from plugin.plugins.galgame_plugin.training.classify.export_onnx import export_onnx
-from plugin.plugins.galgame_plugin.training.classify.model import GameScreenCNN
-from plugin.plugins.galgame_plugin.training.data.dataset import GALGAME_SCREEN_LABELS, GameScreenDataset
 from torch import nn
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 
+from ..data.dataset import GALGAME_SCREEN_LABELS, GameScreenDataset
+from .export_onnx import export_onnx
+from .model import GameScreenCNN
+
 _LOGGER = logging.getLogger(__name__)
-DEFAULT_OUTPUT_DIR = "plugin/plugins/galgame_plugin/models/vision/screen_classifier"
+PLUGIN_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_OUTPUT_DIR = PLUGIN_ROOT / "models" / "vision" / "screen_classifier"
 
 
 def _validate_num_classes(

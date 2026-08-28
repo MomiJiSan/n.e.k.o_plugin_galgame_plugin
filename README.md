@@ -4,22 +4,27 @@
 
 ## Development
 
-The plugin source and its Git repository live at:
+This standalone repository is the source of truth for the plugin. Until the
+v1.0.1 market package is accepted, keep the built-in N.E.K.O copy read-only.
+Removing that copy is a separate change in the N.E.K.O source tree.
 
 ```text
-N.E.K.O/plugin/plugins/galgame_plugin
+n.e.k.o_plugin_galgame_plugin
 ```
 
-插件源码及其 Git 仓库直接位于：
+本独立仓库是插件源码的唯一来源。在 v1.0.1 市场包验收完成前，请保持 N.E.K.O
+源码树中的内置副本只读。移除该副本是 N.E.K.O 源码树中的独立改动。
 
 ```text
-N.E.K.O/plugin/plugins/galgame_plugin
+n.e.k.o_plugin_galgame_plugin
 ```
 
-プラグインのソースと Git リポジトリは次の場所にあります：
+この独立リポジトリをプラグインの唯一のソースとして使用します。v1.0.1 のマーケット
+パッケージが承認されるまで、N.E.K.O の組み込み版は読み取り専用のままにしてください。
+削除は N.E.K.O 側で行う別個の変更です。
 
 ```text
-N.E.K.O/plugin/plugins/galgame_plugin
+n.e.k.o_plugin_galgame_plugin
 ```
 
 When publishing to the plugin market, use this GitHub repository name:
@@ -35,15 +40,33 @@ n.e.k.o_plugin_galgame_plugin
 From this plugin repository root:
 
 ```bash
+uv run pytest
 uvx ruff==0.12.4 check --ignore-noqa --config ruff.toml .
 ```
+
+`uv run pytest` is the standard standalone test command. It uses the Python
+version and development dependencies declared by this repository; do not invoke
+a `pytest` executable inherited from PATH. PyTorch-dependent ONNX export tests
+are optional training checks and are skipped when PyTorch is not installed.
+
+The built-in-to-market test migration ledger is maintained in
+[`docs/test-migration-status.md`](docs/test-migration-status.md). Unresolved
+plugin-owned entries in that ledger block the v1.0.1 market release even when
+the current standalone suite is green.
+
+`uv run pytest` 是独立仓库的标准测试命令，会使用本仓库声明的 Python 版本与
+开发依赖；不要直接调用 PATH 中继承的 `pytest`。依赖 PyTorch 的 ONNX 导出测试
+属于可选训练检查，未安装 PyTorch 时会跳过。
+
+内置版到市场版的测试迁移清单维护在
+[`docs/test-migration-status.md`](docs/test-migration-status.md)。即使当前独立
+测试全绿，清单中未解决的插件自有项目仍会阻止 v1.0.1 发布。
 
 From the N.E.K.O repository root / 在 N.E.K.O 仓库根目录中 / N.E.K.O リポジトリのルートで：
 
 ```bash
-uv run --with pip neko-plugin sync galgame_plugin --clean
-uv run neko-plugin check galgame_plugin
-uv run neko-plugin check -r galgame_plugin
+uv run neko-plugin check /path/to/n.e.k.o_plugin_galgame_plugin
+uv run neko-plugin check -r /path/to/n.e.k.o_plugin_galgame_plugin
 ```
 
 Python runtime dependencies are declared in `pyproject.toml` and synced into

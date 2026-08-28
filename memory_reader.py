@@ -76,7 +76,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def is_windows_platform() -> bool:
-    from plugin.plugins.galgame_plugin.capture_platform import is_windows  # noqa: PLC0415
+    from .capture_platform import is_windows  # noqa: PLC0415
 
     return is_windows()
 

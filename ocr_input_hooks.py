@@ -30,8 +30,13 @@ __all__ = [
 # Runtime bridge to avoid circular import after file extraction.
 # ocr_reader re-exports these symbols; the module is resolved lazily via
 # sys.modules so that ocr_input_hooks can be imported before ocr_reader.
+def _reader_module() -> Any | None:
+    package_name = __package__ or ""
+    return sys.modules.get(f"{package_name}.ocr_reader")
+
+
 def _default_foreground_window_handle() -> int:
-    reader_module = sys.modules.get("plugin.plugins.galgame_plugin.ocr_reader")
+    reader_module = _reader_module()
     reader_func = getattr(reader_module, "_foreground_window_handle", None)
     if callable(reader_func):
         try:
@@ -45,7 +50,7 @@ def _default_foreground_window_handle() -> int:
 
 
 def _default_window_handle_from_point(x: int, y: int) -> int:
-    reader_module = sys.modules.get("plugin.plugins.galgame_plugin.ocr_reader")
+    reader_module = _reader_module()
     reader_func = getattr(reader_module, "_window_handle_from_point", None)
     if callable(reader_func):
         try:

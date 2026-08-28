@@ -5,7 +5,7 @@ import json
 import re
 from pathlib import Path
 
-from plugin.plugins.galgame_plugin.core.vision.labels import GALGAME_VISION_LABELS
+from ...core.vision.labels import GALGAME_VISION_LABELS
 
 SUPPORTED_IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
 GALGAME_SCREEN_LABELS: tuple[str, ...] = GALGAME_VISION_LABELS

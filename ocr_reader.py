@@ -28,13 +28,13 @@ from .aihong_state import looks_like_aihong_menu_status_only_text as _reexport_l
 from .models import (
     ADVANCE_SPEED_MEDIUM,
     ADVANCE_SPEEDS,
-    DEFAULT_VISION_CLASSIFIER_MODEL_DIR,
     OCR_CAPTURE_PROFILE_STAGE_TITLE,
     OCR_TRIGGER_MODE_AFTER_ADVANCE,
     READER_MODE_AUTO,
     READER_MODE_MEMORY,
     GalgameConfig,
 )
+from .models.constants import resolve_vision_classifier_model_dir
 from .ocr_bridge_writer import OcrBackendDescriptor as OcrBackendDescriptor
 from .ocr_bridge_writer import OcrCaptureProfile as OcrCaptureProfile
 from .ocr_bridge_writer import OcrTextBox as OcrTextBox
@@ -537,11 +537,7 @@ class OcrReaderManager(
 
     @staticmethod
     def _resolve_vision_model_dir(raw_path: str) -> Path:
-        path = Path(raw_path or DEFAULT_VISION_CLASSIFIER_MODEL_DIR).expanduser()
-        if path.is_absolute():
-            return path
-        repo_root = Path(__file__).resolve().parents[3]
-        return (repo_root / path).resolve()
+        return resolve_vision_classifier_model_dir(raw_path)
 
     def close(self) -> None:
         # 顺序与 ocr_manager_poll.shutdown() 对偶：先停前台监听线程与 capture
