@@ -394,6 +394,10 @@ async def test_windows_default_memory_reader_config_autodiscovers_textractor_and
     )
 
     try:
+        # The reader emits its bridge session during the first tick.  Poll
+        # once more to consume that freshly written session, as happens in
+        # the normal bridge polling loop.
+        await plugin._poll_bridge(force=True)
         await plugin._poll_bridge(force=True)
         status = await plugin.galgame_get_status()
         snapshot = await plugin.galgame_get_snapshot()
