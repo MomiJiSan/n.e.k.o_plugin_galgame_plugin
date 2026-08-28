@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import time
 from importlib import import_module
 from pathlib import Path
@@ -336,6 +337,7 @@ async def test_memory_reader_keeps_recoverable_idle_state_when_textractor_autodi
 
 @pytest.mark.asyncio
 @pytest.mark.plugin_unit
+@pytest.mark.skipif(os.name != "nt", reason="Textractor auto-discovery uses Windows path semantics")
 async def test_windows_default_memory_reader_config_autodiscovers_textractor_and_takes_over_without_bridge_sdk(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
