@@ -8,7 +8,6 @@ from market_plugins.galgame_plugin.reader import (
     tail_events_jsonl,
     warmup_replay_events,
 )
-
 from tests.support.bridge_fixtures import bridge_fixture_game_dir
 
 pytestmark = pytest.mark.plugin_unit

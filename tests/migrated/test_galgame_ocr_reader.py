@@ -75,7 +75,6 @@ from market_plugins.galgame_plugin.screen_classifier import (
     classify_screen_from_ocr,
 )
 from market_plugins.galgame_plugin.service import build_config
-
 from tests.support.fake_clock import patch_module_clock
 
 pytestmark = pytest.mark.plugin_unit

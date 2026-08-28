@@ -6,7 +6,6 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-
 from tests.support.entry_flow import make_install_plugin, make_phase2_plugin, shared_state
 from tests.support.memory_flow import _session_state
 from tests.support.plugin_runtime_stubs import install_plugin_runtime_stubs
