@@ -51,7 +51,6 @@ from market_plugins.galgame_plugin.ocr_reader import (
 from market_plugins.galgame_plugin.reader import read_session_json
 from market_plugins.galgame_plugin.service import build_config
 from plugin.sdk.plugin import Err, Ok
-
 from tests.support.fake_clock import patch_module_clock
 from tests.support.ocr_flow import (
     _clear_bridge_root,

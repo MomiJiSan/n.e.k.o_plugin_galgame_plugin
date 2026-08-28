@@ -5,7 +5,6 @@ from importlib import import_module
 from types import SimpleNamespace
 
 import pytest
-
 from tests.support.plugin_runtime_stubs import install_plugin_runtime_stubs
 
 install_plugin_runtime_stubs()

@@ -13,7 +13,6 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
-
 from tests.support.plugin_runtime_stubs import install_plugin_runtime_stubs
 
 install_plugin_runtime_stubs()

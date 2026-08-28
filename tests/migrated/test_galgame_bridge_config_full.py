@@ -41,7 +41,6 @@ from market_plugins.galgame_plugin.service import (
     resolve_effective_current_line,
 )
 from plugin.sdk.plugin import Err, Ok
-
 from tests.support.memory_flow import (
     _copy_bridge_fixture_scenario,
     _create_game_dir,

@@ -9,7 +9,6 @@ from typing import Any
 
 import pytest
 from market_plugins.galgame_plugin.agent_ocr_actuation import OcrActionContext, OcrActionGate
-
 from tests.support.agent_full_flow import (
     DATA_SOURCE_BRIDGE_SDK,
     DATA_SOURCE_MEMORY_READER,
