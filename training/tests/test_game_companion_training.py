@@ -84,10 +84,10 @@ def test_pretrained_backbone_warning_when_torchvision_load_fails(monkeypatch, ca
 
     real_import = builtins.__import__
 
-    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+    def fake_import(name, globals_=None, locals_=None, fromlist=(), level=0):
         if name == "torchvision.models":
             raise RuntimeError("torchvision cache is corrupted")
-        return real_import(name, globals, locals, fromlist, level)
+        return real_import(name, globals_, locals_, fromlist, level)
 
     monkeypatch.setattr(builtins, "__import__", fake_import)
 
@@ -104,10 +104,10 @@ def test_train_transform_warns_when_albumentations_fails(monkeypatch, caplog) ->
 
     real_import = builtins.__import__
 
-    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+    def fake_import(name, globals_=None, locals_=None, fromlist=(), level=0):
         if name in {"albumentations", "albumentations.pytorch"}:
             raise RuntimeError("augmentation dependency broken")
-        return real_import(name, globals, locals, fromlist, level)
+        return real_import(name, globals_, locals_, fromlist, level)
 
     monkeypatch.setattr(builtins, "__import__", fake_import)
 

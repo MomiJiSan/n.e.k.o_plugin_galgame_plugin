@@ -64,3 +64,6 @@ async def drain_summary_tasks(agent: Any) -> None:
         if not tasks:
             return
         await asyncio.gather(*tasks, return_exceptions=True)
+    remaining = [task for task in [*agent._summary_tasks, *agent._scene_capsule_tasks] if not task.done()]
+    if remaining:
+        raise AssertionError(f"summary tasks still pending: {len(remaining)}")

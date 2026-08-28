@@ -4,21 +4,24 @@
 
 ## Development
 
-This standalone repository is the source of truth for the plugin. Do not keep
-or edit a second built-in copy under the N.E.K.O source tree.
+This standalone repository is the source of truth for the plugin. Until the
+v1.0.1 market package is accepted, keep the built-in N.E.K.O copy read-only.
+Removing that copy is a separate change in the N.E.K.O source tree.
 
 ```text
 n.e.k.o_plugin_galgame_plugin
 ```
 
-本独立仓库是插件源码的唯一来源。不要在 N.E.K.O 源码树中保留或修改第二份内置副本。
+本独立仓库是插件源码的唯一来源。在 v1.0.1 市场包验收完成前，请保持 N.E.K.O
+源码树中的内置副本只读。移除该副本是 N.E.K.O 源码树中的独立改动。
 
 ```text
 n.e.k.o_plugin_galgame_plugin
 ```
 
-この独立リポジトリをプラグインの唯一のソースとして使用します。N.E.K.O のソースツリーに
-組み込み版のコピーを残したり編集したりしないでください。
+この独立リポジトリをプラグインの唯一のソースとして使用します。v1.0.1 のマーケット
+パッケージが承認されるまで、N.E.K.O の組み込み版は読み取り専用のままにしてください。
+削除は N.E.K.O 側で行う別個の変更です。
 
 ```text
 n.e.k.o_plugin_galgame_plugin

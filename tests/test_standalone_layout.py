@@ -17,7 +17,7 @@ EXTERNAL_PACKAGE = "market_plugins.galgame_plugin"
 def test_python_sources_do_not_import_builtin_galgame_namespace() -> None:
     violations: list[str] = []
     for source_path in PLUGIN_ROOT.rglob("*.py"):
-        if any(part in {".git", ".venv"} for part in source_path.parts):
+        if any(part in {".git", ".venv", ".tox", "__pycache__", "build", "dist"} for part in source_path.parts):
             continue
         tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
         for node in ast.walk(tree):
@@ -44,7 +44,7 @@ def test_python_sources_do_not_import_builtin_galgame_namespace() -> None:
 
 
 def test_dynamic_bridges_work_without_and_ignore_builtin_namespace(monkeypatch) -> None:
-    package = sys.modules[EXTERNAL_PACKAGE]
+    package = importlib.import_module(EXTERNAL_PACKAGE)
     package.external_marker = object()
 
     monkeypatch.delitem(sys.modules, "plugin.plugins.galgame_plugin", raising=False)

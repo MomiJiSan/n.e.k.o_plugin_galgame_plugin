@@ -1,6 +1,6 @@
 """Standalone validation script for the OCR capture + recognition pipeline.
 
-Usage (from repo root with venv activated):
+Usage (after staging this source as ``plugins.galgame_plugin`` with venv activated):
     python -m plugins.galgame_plugin.test_ocr_pipeline
 
 This will:

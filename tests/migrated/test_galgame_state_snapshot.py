@@ -288,4 +288,6 @@ class TestConcurrentAccess:
         t2.start()
         t1.join(timeout=10)
         t2.join(timeout=10)
+        assert not t1.is_alive(), "snapshot_loop did not finish; possible deadlock"
+        assert not t2.is_alive(), "commit_loop did not finish; possible deadlock"
         assert not errors

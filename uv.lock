@@ -75,6 +75,9 @@ wheels = [
 name = "galgame-plugin"
 version = "1.0.1"
 source = { virtual = "." }
+dependencies = [
+    { name = "pillow" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -82,20 +85,19 @@ dev = [
     { name = "httpx" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "pillow" },
     { name = "portalocker" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
 ]
 
 [package.metadata]
+requires-dist = [{ name = "pillow", specifier = ">=11,<13" }]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "fastapi", specifier = ">=0.116,<1" },
     { name = "httpx", specifier = ">=0.28,<1" },
     { name = "numpy", specifier = ">=2.0,<3" },
-    { name = "pillow", specifier = ">=11,<13" },
     { name = "portalocker", specifier = ">=3,<4" },
     { name = "pytest", specifier = ">=8.4,<9" },
     { name = "pytest-asyncio", specifier = ">=1.2,<2" },

@@ -349,6 +349,9 @@ async def test_windows_default_memory_reader_config_autodiscovers_textractor_and
     textractor_path.write_text("", encoding="utf-8")
     textractor_path.chmod(0o755)
     monkeypatch.setenv("PATH", str(path_dir))
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "empty-local"))
+    monkeypatch.setenv("ProgramFiles", str(tmp_path / "empty-program-files"))
+    monkeypatch.setenv("ProgramFiles(x86)", str(tmp_path / "empty-program-files-x86"))
 
     plugin_dir, bridge_root = _make_plugin_dirs(tmp_path)
     cfg = _make_effective_config(
@@ -358,6 +361,7 @@ async def test_windows_default_memory_reader_config_autodiscovers_textractor_and
             "poll_interval_seconds": 1,
             "engine_hooks": {"renpy": ["/HREN@Demo.dll"]},
         },
+        ocr_reader={"enabled": False},
     )
     del cfg["memory_reader"]["enabled"]  # type: ignore[index]
     del cfg["memory_reader"]["textractor_path"]  # type: ignore[index]
