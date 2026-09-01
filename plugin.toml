@@ -13,7 +13,7 @@ keywords = [
     "台词",
     "选项",
 ]
-version = "1.0.1"
+version = "1.0.2"
 type = "plugin"
 entry = "plugin.plugins.galgame_plugin.plugin_core:GalgamePlugin"
 
@@ -23,6 +23,23 @@ name = "N.E.K.O Team"
 [plugin.sdk]
 recommended = ">=0.1.0,<0.2.0"
 supported = ">=0.1.0,<0.3.0"
+
+[plugin.install]
+enabled = true
+ui_i18n_dir = "i18n/ui"
+tutorial_enabled = true
+
+[plugin.install.kinds.textractor]
+entry_id = "galgame_install_textractor"
+label = "Textractor"
+queued_message = "Textractor install queued"
+entry_timeout = 600.0
+
+[plugin.install.kinds.rapidocr_models]
+entry_id = "galgame_download_rapidocr_models"
+label = "RapidOCR Models"
+queued_message = "RapidOCR model download queued"
+entry_timeout = 600.0
 
 [plugin.store]
 enabled = false

@@ -106,7 +106,7 @@ def test_model_directory_is_resolved_from_plugin_root(tmp_path) -> None:
     assert example["vision"]["model_dir"] == constants.DEFAULT_VISION_CLASSIFIER_MODEL_DIR
 
 
-def test_market_entry_registers_installs_and_tutorial_from_unicode_path(
+def test_market_entry_has_no_install_or_tutorial_registration_side_effects(
     tmp_path, monkeypatch
 ) -> None:
     stage = tmp_path / "带空格 市场目录" / "plugins" / "galgame_plugin"
@@ -114,29 +114,7 @@ def test_market_entry_registers_installs_and_tutorial_from_unicode_path(
     shutil.copy2(PLUGIN_ROOT / "__init__.py", stage / "__init__.py")
     (stage / "i18n" / "ui").mkdir(parents=True)
 
-    install_calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
-    migration_calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
-
-    class InstallKindRegistration:
-        def __init__(self, **kwargs: object) -> None:
-            self.__dict__.update(kwargs)
-
-    install_registry = ModuleType("plugin.server.install_registry")
-    install_registry.InstallKindRegistration = InstallKindRegistration
-    install_registry.register_install_plugin = (
-        lambda *args, **kwargs: install_calls.append((args, kwargs))
-    )
-    install_registry.register_tutorial_migration_hook = (
-        lambda *args, **kwargs: migration_calls.append((args, kwargs))
-    )
-
-    plugin_module = ModuleType("plugin")
-    plugin_module.__path__ = []
-    server_module = ModuleType("plugin.server")
-    server_module.__path__ = []
-    monkeypatch.setitem(sys.modules, "plugin", plugin_module)
-    monkeypatch.setitem(sys.modules, "plugin.server", server_module)
-    monkeypatch.setitem(sys.modules, install_registry.__name__, install_registry)
+    monkeypatch.delitem(sys.modules, "plugin.server.install_registry", raising=False)
 
     parent = ModuleType("plugins")
     parent.__path__ = [str(stage.parent)]
@@ -149,15 +127,8 @@ def test_market_entry_registers_installs_and_tutorial_from_unicode_path(
     config_service.GalgamePluginConfigService = type(
         "GalgamePluginConfigService", (), {}
     )
-    tutorial_migration = ModuleType(f"{package_name}._tutorial_migration")
-
-    def tutorial_hook(_path: Path) -> None:
-        return None
-
-    tutorial_migration.copy_legacy_tutorial_progress_if_missing = tutorial_hook
     monkeypatch.setitem(sys.modules, plugin_core.__name__, plugin_core)
     monkeypatch.setitem(sys.modules, config_service.__name__, config_service)
-    monkeypatch.setitem(sys.modules, tutorial_migration.__name__, tutorial_migration)
 
     spec = importlib.util.spec_from_file_location(
         package_name,
@@ -169,16 +140,8 @@ def test_market_entry_registers_installs_and_tutorial_from_unicode_path(
     monkeypatch.setitem(sys.modules, package_name, package)
     spec.loader.exec_module(package)
 
-    assert len(install_calls) == 1
-    install_args, install_kwargs = install_calls[0]
-    assert install_args == ("galgame_plugin",)
-    assert set(install_kwargs["install_kinds"]) == {"rapidocr_models", "textractor"}
-    assert install_kwargs["ui_i18n_dir"] == stage / "i18n" / "ui"
-    assert install_kwargs["tutorial_enabled"] is True
-
-    assert migration_calls == [
-        ((tutorial_hook,), {"plugin_id": "galgame_plugin"})
-    ]
+    assert "plugin.server.install_registry" not in sys.modules
+    assert f"{package_name}._tutorial_migration" not in sys.modules
     loaded_plugin_files = [
         Path(module.__file__).resolve()
         for name, module in sys.modules.items()
