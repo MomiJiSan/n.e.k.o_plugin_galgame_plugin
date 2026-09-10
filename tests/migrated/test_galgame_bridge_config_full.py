@@ -396,7 +396,10 @@ async def test_first_bridge_poll_binds_latest_session_and_exposes_ui(tmp_path: P
     plugin = GalgameBridgePlugin(ctx)
     startup = await plugin.startup()
     assert isinstance(startup, Ok)
-    assert startup.value["result"]["available_game_ids"] == []
+    assert startup.value == {"status": "ready"}
+    initial_status = await plugin.galgame_get_status()
+    assert isinstance(initial_status, Ok)
+    assert initial_status.value["available_game_ids"] == []
     await plugin._poll_bridge(force=True)
 
     status = await plugin.galgame_get_status()
@@ -417,46 +420,130 @@ async def test_first_bridge_poll_binds_latest_session_and_exposes_ui(tmp_path: P
     assert open_ui.value["path"] == "/plugin/galgame_plugin/ui/"
 
 
-@pytest.mark.asyncio
 @pytest.mark.plugin_unit
-async def test_startup_auto_opens_ui_only_when_enabled(
+@pytest.mark.parametrize("enabled", [False, True])
+def test_startup_defers_browser_until_runtime_without_blocking_loop_teardown(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    enabled: bool,
 ) -> None:
     opened_urls: list[str] = []
-    monkeypatch.setattr(galgame_plugin_module, "_open_url_in_browser", opened_urls.append)
+    opened = threading.Event()
+    release = threading.Event()
+    finished = threading.Event()
+    worker_threads: list[threading.Thread] = []
+
+    def slow_open(url: str) -> None:
+        worker_threads.append(threading.current_thread())
+        opened_urls.append(url)
+        opened.set()
+        release.wait(timeout=5)
+        finished.set()
+
+    monkeypatch.setattr(galgame_plugin_module, "_open_url_in_browser", slow_open)
     monkeypatch.setenv("NEKO_USER_PLUGIN_SERVER_PORT", "49001")
-
-    disabled_root = tmp_path / "disabled"
-    disabled_root.mkdir()
-    disabled_plugin_dir, disabled_bridge_root = _make_plugin_dirs(disabled_root)
-    disabled_ctx = _Ctx(disabled_plugin_dir, _make_effective_config(disabled_bridge_root))
-    disabled_plugin = GalgameBridgePlugin(disabled_ctx)
-    disabled_plugin._poll_bridge = _noop_install_entry_poll  # type: ignore[method-assign]
-    disabled_plugin._build_status_payload_async = lambda: asyncio.sleep(0, result={})  # type: ignore[method-assign]
-    disabled_plugin._start_ocr_fast_loop = lambda: False  # type: ignore[method-assign]
-    disabled_plugin._ensure_ocr_foreground_advance_monitor = lambda: asyncio.sleep(0, result=False)  # type: ignore[method-assign]
-    disabled_startup = await disabled_plugin.startup()
-
-    assert isinstance(disabled_startup, Ok)
-    assert opened_urls == []
-
-    enabled_root = tmp_path / "enabled"
-    enabled_root.mkdir()
-    enabled_plugin_dir, enabled_bridge_root = _make_plugin_dirs(enabled_root)
-    enabled_ctx = _Ctx(
-        enabled_plugin_dir,
-        _make_effective_config(enabled_bridge_root, galgame={"auto_open_ui": True}),
+    plugin_dir, bridge_root = _make_plugin_dirs(tmp_path)
+    plugin = GalgameBridgePlugin(
+        _Ctx(plugin_dir, _make_effective_config(bridge_root, galgame={"auto_open_ui": enabled}))
     )
-    enabled_plugin = GalgameBridgePlugin(enabled_ctx)
-    enabled_plugin._poll_bridge = _noop_install_entry_poll  # type: ignore[method-assign]
-    enabled_plugin._build_status_payload_async = lambda: asyncio.sleep(0, result={})  # type: ignore[method-assign]
-    enabled_plugin._start_ocr_fast_loop = lambda: False  # type: ignore[method-assign]
-    enabled_plugin._ensure_ocr_foreground_advance_monitor = lambda: asyncio.sleep(0, result=False)  # type: ignore[method-assign]
-    enabled_startup = await enabled_plugin.startup()
+    try:
+        # Match the host: close the startup loop before running timer entries.
+        startup = asyncio.run(plugin.startup())
+        assert isinstance(startup, Ok)
+        assert opened_urls == []
+        plugin._game_agent = None
+        plugin._ocr_reader_manager = None
+        monkeypatch.setattr(plugin, "_start_background_bridge_poll", lambda: False)
+        monkeypatch.setattr(plugin, "_start_ocr_fast_loop", lambda: False)
+        monkeypatch.setattr(plugin, "_refresh_ocr_foreground_state", lambda: None)
+        monkeypatch.setattr(plugin, "_ocr_foreground_advance_monitor_active", lambda: True)
+        asyncio.run(plugin.bridge_tick())
+        asyncio.run(plugin.bridge_tick())
+        if enabled:
+            assert opened.wait(timeout=2)
+            assert not finished.is_set(), "runtime teardown waited for the browser"
+            assert opened_urls == ["http://127.0.0.1:49001/plugin/galgame_plugin/ui/"]
+            assert worker_threads[0] is not threading.current_thread()
+            assert worker_threads[0].daemon
+        else:
+            assert opened_urls == []
+    finally:
+        release.set()
+        for worker in worker_threads:
+            worker.join(timeout=2)
+        asyncio.run(plugin.shutdown())
 
-    assert isinstance(enabled_startup, Ok)
-    assert opened_urls == ["http://127.0.0.1:49001/plugin/galgame_plugin/ui/"]
+
+@pytest.mark.asyncio
+@pytest.mark.plugin_unit
+async def test_startup_leaves_dependency_probes_and_workers_to_runtime(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    plugin_dir, bridge_root = _make_plugin_dirs(tmp_path)
+    plugin = GalgameBridgePlugin(_Ctx(plugin_dir, _make_effective_config(bridge_root)))
+
+    def forbidden(*args: object, **kwargs: object) -> None:
+        pytest.fail("startup must not inspect native dependencies or start runtime workers")
+
+    monkeypatch.setattr(plugin, "_refresh_dependency_status", forbidden)
+    monkeypatch.setattr(plugin, "_build_status_payload_async", forbidden)
+    monkeypatch.setattr(plugin, "_start_ocr_fast_loop", forbidden)
+    monkeypatch.setattr(plugin, "_ensure_ocr_foreground_advance_monitor", forbidden)
+    before = asyncio.all_tasks()
+    startup = await plugin.startup()
+    assert isinstance(startup, Ok)
+    assert startup.value == {"status": "ready"}
+    assert asyncio.all_tasks() == before
+    await plugin.shutdown()
+
+
+@pytest.mark.asyncio
+@pytest.mark.plugin_unit
+async def test_dependency_diagnostics_remain_available_after_lightweight_startup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    plugin_dir, bridge_root = _make_plugin_dirs(tmp_path)
+    plugin = GalgameBridgePlugin(_Ctx(plugin_dir, _make_effective_config(bridge_root)))
+    inspected: list[str] = []
+
+    def inspect_dxcam() -> dict[str, object]:
+        inspected.append("dxcam")
+        return {
+            "installed": False, "install_supported": True, "can_install": False,
+            "detail": "broken_runtime", "runtime_error": "native library failed to load",
+        }
+
+    monkeypatch.setattr(galgame_plugin_module, "inspect_dxcam_installation", inspect_dxcam)
+    monkeypatch.setattr(galgame_service, "inspect_dxcam_installation", inspect_dxcam)
+    try:
+        assert isinstance(await plugin.startup(), Ok)
+        assert inspected == []
+        status = await plugin.galgame_get_status()
+        assert isinstance(status, Ok)
+        assert inspected == ["dxcam"]
+        assert status.value["dxcam"]["detail"] == "broken_runtime"
+        assert status.value["dxcam"]["runtime_error"] == "native library failed to load"
+    finally:
+        await plugin.shutdown()
+        galgame_service.clear_install_inspection_cache()
+
+
+@pytest.mark.asyncio
+@pytest.mark.plugin_unit
+async def test_shutdown_before_first_tick_suppresses_browser_launch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    plugin_dir, bridge_root = _make_plugin_dirs(tmp_path)
+    plugin = GalgameBridgePlugin(_Ctx(
+        plugin_dir, _make_effective_config(bridge_root, galgame={"auto_open_ui": True}),
+    ))
+    opened_urls: list[str] = []
+    monkeypatch.setattr(galgame_plugin_module, "_open_url_in_browser", opened_urls.append)
+    assert isinstance(await plugin.startup(), Ok)
+    await plugin.shutdown()
+    result = await plugin.bridge_tick()
+    assert result.value == {"status": "stopped"}
+    assert opened_urls == []
 
 
 @pytest.mark.asyncio
