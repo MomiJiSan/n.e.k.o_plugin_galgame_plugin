@@ -373,6 +373,7 @@ class GalgamePlugin(
         self._bridge_tick_last_error = ""
         self._bridge_tick_launch_count = 0
         self._bridge_tick_shutdown_requested = False
+        self._startup_ui_pending = False
         self._pending_ocr_advance_captures = 0
         self._last_ocr_advance_capture_requested_at = 0.0
         self._last_ocr_advance_capture_reason = ""
@@ -3212,8 +3213,6 @@ class GalgamePlugin(
         self._ocr_reader_manager.update_capture_profiles(self._state.ocr_capture_profiles)
         self._ocr_reader_manager.update_window_target(self._state.ocr_window_target)
 
-        self._refresh_dependency_status()
-
         self.register_static_ui("static")
         self.set_list_actions(
             [
@@ -3226,30 +3225,45 @@ class GalgamePlugin(
             ]
         )
 
-        if self._cfg.bridge.auto_open_ui:
-            port = os.getenv("NEKO_USER_PLUGIN_SERVER_PORT", "48916")
-            url = f"http://127.0.0.1:{port}/plugin/{self.plugin_id}/ui/"
-            try:
-                open_url_in_browser = _package_public_attr(
-                    "_open_url_in_browser",
-                    _open_url_in_browser,
-                )
-                await asyncio.to_thread(open_url_in_browser, url)
-            except Exception as exc:
-                _log_plugin_noncritical(
-                    self.logger,
-                    "warning",
-                    "galgame auto-open UI failed: {}",
-                    exc,
-                )
+        # The host closes the startup event loop before acknowledging ready.
+        # Native dependency imports, browser launch and the full status payload
+        # must not run here (including via that loop's default executor).
+        # Status entries inspect dependencies on demand; bridge_tick starts the
+        # workers and opens the UI after the child has sent ready.
+        clear_install_inspection_cache()
+        self._startup_ui_pending = bool(self._cfg.bridge.auto_open_ui)
+        return Ok({"status": "ready"})
 
-        self._start_ocr_fast_loop()
-        await self._ensure_ocr_foreground_advance_monitor()
-        return Ok({"status": "ready", "result": await self._build_status_payload_async()})
+    def _open_startup_ui_if_needed(self) -> None:
+        with self._state_lock:
+            if self._bridge_tick_shutdown_requested or not self._startup_ui_pending:
+                return
+            self._startup_ui_pending = False
+        if self._cfg is None or not self._cfg.bridge.auto_open_ui:
+            return
+        port = os.getenv("NEKO_USER_PLUGIN_SERVER_PORT", "48916")
+        url = f"http://127.0.0.1:{port}/plugin/{self.plugin_id}/ui/"
+        opener = _package_public_attr("_open_url_in_browser", _open_url_in_browser)
+        logger = self.logger
+
+        def open_ui() -> None:
+            try:
+                opener(url)
+            except Exception as exc:
+                _log_plugin_noncritical(logger, "warning", "galgame auto-open UI failed: {}", exc)
+
+        # Windows ShellExecute can wait for the browser. A one-shot daemon
+        # worker keeps both the timer and event-loop teardown independent of
+        # that OS call. It owns only the captured URL and never updates state.
+        try:
+            threading.Thread(target=open_ui, name="galgame-open-ui", daemon=True).start()
+        except RuntimeError as exc:
+            _log_plugin_noncritical(logger, "warning", "galgame auto-open UI failed: {}", exc)
 
     @lifecycle(id="shutdown")
     async def shutdown(self, **_):
         self._bridge_tick_shutdown_requested = True
+        self._startup_ui_pending = False
         await self._cancel_ocr_fast_loop()
         await self._cancel_ocr_foreground_advance_monitor()
         await self._cancel_background_bridge_poll()
@@ -3330,6 +3344,8 @@ class GalgamePlugin(
             self._bridge_tick_launch_count += 1
             self._bridge_tick_last_error = ""
         try:
+            self._open_startup_ui_if_needed()
+            await self._ensure_ocr_foreground_advance_monitor()
             self._clear_completed_background_bridge_poll()
             self._refresh_ocr_foreground_state()
             if not self._ocr_foreground_advance_monitor_active():
