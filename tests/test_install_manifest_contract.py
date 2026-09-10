@@ -5,7 +5,7 @@ import tomllib
 from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_VERSION = "1.0.2"
+EXPECTED_VERSION = "1.0.3"
 EXPECTED_INSTALL_KINDS = {
     "textractor": {
         "entry_id": "galgame_install_textractor",
